@@ -311,57 +311,65 @@ body {
    Landing Page (Work in Progress)
    ========================================================================== */
 .glass-window-wide {
-  max-width: 860px;
+  max-width: 560px;
 }
 
 .landing-body {
-  padding: 3rem 2.5rem;
+  padding: 3rem 2.5rem 2.75rem 2.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 2rem;
 }
 
 .wip-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.35rem 0.9rem;
+  padding: 0.35rem 0.95rem;
   border-radius: 9999px;
   background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.3);
   color: #fbbf24;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-title);
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 1rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.25rem;
 }
 
 .landing-title {
   font-family: var(--font-title);
-  font-size: 2.2rem;
+  font-size: 1.85rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #ffffff;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.75rem;
 }
 
 .landing-subtitle {
-  font-size: 0.96rem;
+  font-size: 0.92rem;
   color: var(--text-muted);
-  max-width: 600px;
-  line-height: 1.6;
+  max-width: 440px;
+  line-height: 1.55;
+  margin-bottom: 2rem;
 }
 
-.grid-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+.landing-actions {
   width: 100%;
-  text-align: left;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-consultar {
+  width: 100%;
+  max-width: 340px;
+  margin-top: 0;
+  padding: 1rem 1.75rem;
+  font-size: 0.88rem;
+  letter-spacing: 0.08em;
 }
 
 .glass-card {
