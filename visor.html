@@ -36,11 +36,12 @@
         </div>
       </div>
 
-      <!-- Selector de Capa Base -->
+      <!-- Selector de Capa Base (Google Satélite activo por defecto) -->
       <div class="topbar-center">
-        <button class="basemap-btn active" data-base="dark" title="Capa Base CartoDB Dark">Modo Oscuro</button>
-        <button class="basemap-btn" data-base="sat" title="Ortofoto Satélite PNOA / IGN">Satélite PNOA</button>
-        <button class="basemap-btn" data-base="light" title="Capa Base Cartográfica Clara">Topográfico</button>
+        <button class="basemap-btn active" data-base="googleSat" title="Google Satélite">Google Satélite</button>
+        <button class="basemap-btn" data-base="googleHybrid" title="Google Híbrido con Calles">Google Híbrido</button>
+        <button class="basemap-btn" data-base="dark" title="Capa Base CartoDB Dark">Modo Oscuro</button>
+        <button class="basemap-btn" data-base="pnoa" title="Ortofoto Satélite PNOA / IGN">PNOA IGN</button>
       </div>
 
       <!-- Usuario y Acciones -->
@@ -69,7 +70,7 @@
       <!-- Indicador de Carga OGC API -->
       <div id="mapLoader" class="map-loader-indicator">
         <div class="spinner-small"></div>
-        <span>Consultando OGC API en tiempo real...</span>
+        <span>Actualizando cartografía OGC API...</span>
       </div>
 
       <!-- Mapa Leaflet -->
@@ -105,15 +106,15 @@
             <div class="summary-grid">
               <div class="summary-card trees">
                 <div class="summary-val">80.239</div>
-                <div class="summary-name">🌴 Arbolado</div>
+                <div class="summary-name">Arbolado</div>
               </div>
               <div class="summary-card zones">
                 <div class="summary-val">2.698</div>
-                <div class="summary-name">🏛️ Recintos</div>
+                <div class="summary-name">Recintos</div>
               </div>
               <div class="summary-card surfaces">
                 <div class="summary-val">10.981</div>
-                <div class="summary-name">📐 Superficies</div>
+                <div class="summary-name">Superficies</div>
               </div>
             </div>
           </section>
@@ -123,9 +124,9 @@
             <div class="section-label">Filtros por Capas OGC</div>
 
             <nav class="tabs-header">
-              <button class="tab-btn active" data-tab="arbolado">🌴 Arbolado</button>
-              <button class="tab-btn" data-tab="recintos">🏛️ Recintos</button>
-              <button class="tab-btn" data-tab="superficies">📐 Superficies</button>
+              <button class="tab-btn active" data-tab="arbolado">Arbolado</button>
+              <button class="tab-btn" data-tab="recintos">Recintos</button>
+              <button class="tab-btn" data-tab="superficies">Superficies</button>
             </nav>
 
             <!-- Pestaña 1: CT_arbolado_y_palmeras -->
@@ -144,6 +145,12 @@
                   <option value="">Todos los tipos</option>
                   <option value="arbol">Árbol</option>
                   <option value="palmera">Palmera</option>
+                  <option value="arbol singular">Árbol singular</option>
+                  <option value="M">Marra (M)</option>
+                  <option value="T">Tocón (T)</option>
+                  <option value="A">Alcorque vacío (A)</option>
+                  <option value="H">Hueco disponible (H)</option>
+                  <option value="macetero">Macetero</option>
                 </select>
               </div>
 
@@ -152,9 +159,11 @@
                 <select id="filterArboladoZona" class="filter-select">
                   <option value="">Todas las zonas</option>
                   <option value="CENTRO">CENTRO</option>
+                  <option value="BARRIOS">BARRIOS</option>
+                  <option value="DIP ESTE">DIP ESTE</option>
+                  <option value="DIP OESTE">DIP OESTE</option>
                   <option value="LIT PONIENTE">LIT PONIENTE</option>
-                  <option value="MAR MENOR">MAR MENOR</option>
-                  <option value="ZONA NORTE">ZONA NORTE</option>
+                  <option value="LIT LEVANTE">LIT LEVANTE</option>
                 </select>
               </div>
 
@@ -162,15 +171,39 @@
                 <label class="filter-label" for="filterArboladoTamano">Tamaño / Altura</label>
                 <select id="filterArboladoTamano" class="filter-select">
                   <option value="">Todos los tamaños</option>
-                  <option value="Menos de 3 m">Menos de 3 m</option>
-                  <option value="De 3 a 6 m">De 3 a 6 m</option>
                   <option value="Mas de 6 m">Más de 6 m</option>
+                  <option value="De 3 a 6 m">De 3 a 6 m</option>
+                  <option value="Menos de 3 m">Menos de 3 m</option>
                 </select>
               </div>
 
               <div class="filter-group">
-                <label class="filter-label" for="filterArboladoSearch">Búsqueda rápida</label>
-                <input type="text" id="filterArboladoSearch" class="filter-input" placeholder="Buscar por código o especie (ej. Phoenix)..." />
+                <label class="filter-label" for="filterArboladoEspecie">Especie Botánica</label>
+                <select id="filterArboladoEspecie" class="filter-select">
+                  <option value="">Todas las especies</option>
+                  <option value="Washingtonia">Washingtonia</option>
+                  <option value="Pinus halepensis">Pinus halepensis (Pino carrasco)</option>
+                  <option value="Phoenix dactylifera">Phoenix dactylifera (Palmera datilera)</option>
+                  <option value="Morus alba">Morus alba (Morera)</option>
+                  <option value="Melia azedarach">Melia azedarach (Cinamomo)</option>
+                  <option value="Eucalyptus camaldulensis">Eucalyptus camaldulensis (Eucalipto)</option>
+                  <option value="Citrus aurantium">Citrus aurantium (Naranjo amargo)</option>
+                  <option value="Platanus x hispanica">Platanus x hispanica (Plátano de sombra)</option>
+                  <option value="Brachychiton populneum">Brachychiton populneum (Braquiquito)</option>
+                  <option value="Chamaerops humilis">Chamaerops humilis (Palmito)</option>
+                  <option value="Tipuana Tipu">Tipuana Tipu</option>
+                  <option value="Cupressus sempervirens">Cupressus sempervirens (Ciprés)</option>
+                  <option value="Olea europaea">Olea europaea (Olivo)</option>
+                  <option value="Jacaranda mimosifolia">Jacaranda mimosifolia</option>
+                  <option value="Nerium oleander">Nerium oleander (Adelfa)</option>
+                  <option value="Populus alba">Populus alba (Álamo blanco)</option>
+                  <option value="Schinus molle">Schinus molle (Falso pimentero)</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterArboladoSearch">Búsqueda libre</label>
+                <input type="text" id="filterArboladoSearch" class="filter-input" placeholder="Buscar por código (ej. MJNV05_A1) o nombre..." />
               </div>
             </div>
 
@@ -189,9 +222,11 @@
                 <select id="filterRecintosZona" class="filter-select">
                   <option value="">Todas las zonas</option>
                   <option value="CENTRO">CENTRO</option>
+                  <option value="BARRIOS">BARRIOS</option>
+                  <option value="DIP ESTE">DIP ESTE</option>
+                  <option value="DIP OESTE">DIP OESTE</option>
                   <option value="LIT PONIENTE">LIT PONIENTE</option>
-                  <option value="MAR MENOR">MAR MENOR</option>
-                  <option value="ZONA NORTE">ZONA NORTE</option>
+                  <option value="LIT LEVANTE">LIT LEVANTE</option>
                 </select>
               </div>
 
@@ -199,15 +234,18 @@
                 <label class="filter-label" for="filterRecintosEstado">Estado / Tipo</label>
                 <select id="filterRecintosEstado" class="filter-select">
                   <option value="">Todos los estados</option>
+                  <option value="Zona Verde">Zona Verde</option>
                   <option value="Viario">Viario</option>
-                  <option value="Parque">Parque</option>
-                  <option value="Plaza">Plaza</option>
+                  <option value="Equipamiento">Equipamiento</option>
+                  <option value="edu">Equipamiento Educativo</option>
+                  <option value="sin desarrollar">Sin desarrollar</option>
+                  <option value="no existe">No existe</option>
                 </select>
               </div>
 
               <div class="filter-group">
                 <label class="filter-label" for="filterRecintosSearch">Nombre o Código</label>
-                <input type="text" id="filterRecintosSearch" class="filter-input" placeholder="Buscar por calle o código de recinto..." />
+                <input type="text" id="filterRecintosSearch" class="filter-input" placeholder="Buscar por calle o código (ej. Isla de Pascua)..." />
               </div>
             </div>
 
@@ -226,9 +264,17 @@
                 <select id="filterSuperficiesElemento" class="filter-select">
                   <option value="">Todos los elementos</option>
                   <option value="jardin">Jardín</option>
-                  <option value="parterre">Parterre</option>
                   <option value="cesped">Césped</option>
-                  <option value="alcorque">Alcorque</option>
+                  <option value="pavimento duro">Pavimento duro</option>
+                  <option value="pavimento blando">Pavimento blando</option>
+                  <option value="tierra desnuda">Tierra desnuda</option>
+                  <option value="zona de juegos">Zona de juegos</option>
+                  <option value="zona deportiva">Zona deportiva</option>
+                  <option value="silvestre">Silvestre</option>
+                  <option value="pergola">Pérgola</option>
+                  <option value="fuente">Fuente</option>
+                  <option value="construccion">Construcción</option>
+                  <option value="otros">Otros</option>
                 </select>
               </div>
 
@@ -237,8 +283,11 @@
                 <select id="filterSuperficiesZona" class="filter-select">
                   <option value="">Todas las zonas</option>
                   <option value="CENTRO">CENTRO</option>
+                  <option value="BARRIOS">BARRIOS</option>
+                  <option value="DIP ESTE">DIP ESTE</option>
+                  <option value="DIP OESTE">DIP OESTE</option>
                   <option value="LIT PONIENTE">LIT PONIENTE</option>
-                  <option value="MAR MENOR">MAR MENOR</option>
+                  <option value="LIT LEVANTE">LIT LEVANTE</option>
                 </select>
               </div>
 
@@ -254,12 +303,12 @@
 
             <!-- Botones de Acción de Filtros -->
             <div class="filter-actions">
-              <button id="btnApplyFilters" class="btn-apply-filters">Aplicar Filtros</button>
-              <button id="btnResetFilters" class="btn-reset-filters">Limpiar</button>
+              <button id="btnApplyFilters" class="btn-apply-filters">Filtrar</button>
+              <button id="btnResetFilters" class="btn-reset-filters">Limpiar Filtros</button>
             </div>
 
             <div id="visibleCountText" class="visible-counter-pill">
-              Consultando elementos en el encuadre...
+              Cargando elementos...
             </div>
           </section>
         </div>
