@@ -93,21 +93,35 @@ function initMap() {
   // Activar Google Satélite por defecto
   state.basemaps.googleSat.addTo(state.map);
 
-  // Agrupación de clústeres para arbolado: a partir de zoom 16 se desactiva para ver la simbología exacta de QGIS
-  state.layers.arbolado = L.markerClusterGroup({
-    showCoverageOnHover: false,
-    maxClusterRadius: 40,
-    disableClusteringAtZoom: 16
-  }).addTo(state.map);
+  // Panes con orden de capas estricto:
+  // Recintos (abajo, 410) < Superficies (centro, 420) < Arbolado (arriba, 430)
+  state.map.createPane("recintosPane");
+  state.map.getPane("recintosPane").style.zIndex = 410;
+
+  state.map.createPane("superficiesPane");
+  state.map.getPane("superficiesPane").style.zIndex = 420;
+
+  state.map.createPane("arboladoPane");
+  state.map.getPane("arboladoPane").style.zIndex = 430;
 
   state.layers.recintos = L.geoJSON(null, {
+    pane: "recintosPane",
     style: styleRecinto,
     onEachFeature: onEachFeatureRecinto
   }).addTo(state.map);
 
   state.layers.superficies = L.geoJSON(null, {
+    pane: "superficiesPane",
     style: styleSuperficie,
     onEachFeature: onEachFeatureSuperficie
+  }).addTo(state.map);
+
+  // Agrupación de clústeres para arbolado: a partir de zoom 16 se desactiva para ver la simbología exacta de QGIS
+  state.layers.arbolado = L.markerClusterGroup({
+    clusterPane: "arboladoPane",
+    showCoverageOnHover: false,
+    maxClusterRadius: 40,
+    disableClusteringAtZoom: 16
   }).addTo(state.map);
 
   // Recarga al mover el mapa (con debounce)
@@ -244,6 +258,7 @@ function createArboladoMarker(feature, latlng) {
   }
 
   const marker = L.circleMarker(latlng, {
+    pane: "arboladoPane",
     radius: radius,
     fillColor: fillColor,
     color: strokeColor,
@@ -268,6 +283,14 @@ function onEachFeatureRecinto(feature, layer) {
       state.layers.recintos.resetStyle(e.target);
     },
     click: () => {
+      // Auto-centrar la cámara en la geometría del recinto
+      if (layer.getBounds) {
+        state.map.fitBounds(layer.getBounds(), {
+          padding: [70, 70],
+          maxZoom: 18,
+          duration: 0.8
+        });
+      }
       openFeatureDrawer(feature, "recintos");
     }
   });
@@ -431,7 +454,13 @@ function openFeatureDrawer(feature, layerKey) {
   layerBadge.textContent = layerKey === "arbolado" ? "Arbolado y Palmeras" : layerKey === "recintos" ? "Recinto" : "Superficie";
 
   const p = feature.properties || {};
-  titleEl.textContent = p.COD_ARB || p.Nombre || p.CODIGO || p.COD_recinto || `Elemento #${feature.id}`;
+  titleEl.textContent = p.NOM_recinto || p.Nombre || p.COD_recinto || p.COD_ARB || p.CODIGO || `Elemento #${feature.id}`;
+
+  // Mostrar el botón de exportar a PDF exclusivamente para recintos
+  const btnExportPdf = document.getElementById("btnExportRecintoPDF");
+  if (btnExportPdf) {
+    btnExportPdf.style.display = layerKey === "recintos" ? "flex" : "none";
+  }
 
   tableBody.innerHTML = "";
   const excludeKeys = ["auxiliar", "bbox"];
@@ -596,6 +625,19 @@ function setupUIEventListeners() {
     });
   });
 
+  // Control de Saturación del Mapa Base
+  initSaturationControl();
+
+  // Exportar Recinto a PDF
+  const btnExportPdf = document.getElementById("btnExportRecintoPDF");
+  if (btnExportPdf) {
+    btnExportPdf.addEventListener("click", () => {
+      if (state.selectedFeature) {
+        exportRecintoPDF(state.selectedFeature);
+      }
+    });
+  }
+
   // Logout
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
@@ -671,6 +713,386 @@ function updateVisibleCounters() {
     const totalVisible = state.visibleCounts.arbolado + state.visibleCounts.recintos + state.visibleCounts.superficies;
     counterEl.textContent = `Mostrando ${totalVisible.toLocaleString("es-ES")} elementos filtrados en pantalla`;
   }
+}
+
+// ==============================================================================
+// CONTROL DE SATURACIÓN DEL FONDO SATÉLITE
+// ==============================================================================
+function initSaturationControl() {
+  const satToggle = document.getElementById("btnSatToggle");
+  const satPopover = document.getElementById("satPopover");
+  const satSlider = document.getElementById("satSlider");
+
+  // Valor por defecto: 30%
+  setSaturation(30);
+
+  if (satToggle && satPopover) {
+    satToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      satPopover.classList.toggle("open");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!satPopover.contains(e.target) && !satToggle.contains(e.target)) {
+        satPopover.classList.remove("open");
+      }
+    });
+  }
+
+  if (satSlider) {
+    satSlider.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10);
+      setSaturation(val);
+    });
+  }
+
+  document.querySelectorAll(".sat-preset-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const val = parseInt(btn.dataset.val, 10);
+      if (satSlider) satSlider.value = val;
+      setSaturation(val);
+    });
+  });
+}
+
+function setSaturation(value) {
+  document.documentElement.style.setProperty("--map-saturation", `${value}%`);
+  const satValDisplay = document.getElementById("satValDisplay");
+  const satValPopover = document.getElementById("satValPopover");
+  if (satValDisplay) satValDisplay.textContent = `${value}%`;
+  if (satValPopover) satValPopover.textContent = `${value}%`;
+}
+
+// ==============================================================================
+// EXPORTACIÓN DE RECINTO A PDF / INFORME TÉCNICO
+// ==============================================================================
+function exportRecintoPDF(feature) {
+  if (!feature) return;
+
+  const p = feature.properties || {};
+  const recintoNombre = p.NOM_recinto || p.Nombre || p.COD_recinto || `Recinto #${feature.id}`;
+  const recintoCod = p.COD_recinto || p.CODIGO || "—";
+  const recintoEstado = p.Estado || "—";
+  const recintoSup = p.SUP ? Number(p.SUP).toLocaleString("es-ES") + " m²" : "—";
+  const recintoZona = p.Zona || "—";
+  const recintoNucleo = p.NucleoUrb || "—";
+  const recintoTitularidad = p.TITULARIDA || "—";
+  const recintoContrato = p.Contrato || "—";
+  const fechaGeneracion = new Date().toLocaleDateString("es-ES", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  const printWindow = window.open("", "_blank", "width=1200,height=850");
+  if (!printWindow) {
+    alert("Por favor, permita las ventanas emergentes (pop-ups) en su navegador para exportar el PDF.");
+    return;
+  }
+
+  const featureJsonString = JSON.stringify(feature);
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>TESELAB - Ficha Técnica: ${recintoNombre}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #1e293b;
+      background: #f8fafc;
+      padding: 1.5rem;
+      -webkit-font-smoothing: antialiased;
+    }
+    .print-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .btn-action {
+      background: #0f172a;
+      color: #ffffff;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-action.secondary {
+      background: #e2e8f0;
+      color: #334155;
+    }
+    .report-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .report-header {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 1.25rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .report-brand {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .report-brand span { color: #38bdf8; }
+    .report-subtitle {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 0.15rem;
+    }
+    .report-date {
+      text-align: right;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+    .report-body {
+      padding: 1.5rem 1.75rem;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.5rem;
+    }
+    .map-container-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .map-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    #printMap {
+      width: 100%;
+      height: 380px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+    }
+    .print-tile-pane {
+      filter: saturate(30%);
+    }
+    .info-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .section-heading {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 0.4rem;
+    }
+    .attr-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    .attr-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 0.65rem 0.85rem;
+    }
+    .attr-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .attr-value {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 0.2rem;
+    }
+    .attr-box.full-width {
+      grid-column: span 2;
+    }
+    .report-footer {
+      background: #f1f5f9;
+      padding: 0.85rem 1.75rem;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: #64748b;
+    }
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      .print-actions {
+        display: none !important;
+      }
+      .report-card {
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+      #printMap {
+        height: 380px;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .print-tile-pane {
+        filter: saturate(30%) !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-actions">
+    <button class="btn-action secondary" onclick="window.close()">Cerrar</button>
+    <button class="btn-action" onclick="window.print()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+      <span>Imprimir / Guardar como PDF</span>
+    </button>
+  </div>
+
+  <div class="report-card">
+    <header class="report-header">
+      <div>
+        <div class="report-brand">TESELAB <span>CARTAGENA</span></div>
+        <div class="report-subtitle">Ficha Técnica Oficial de Recinto Cartográfico</div>
+      </div>
+      <div class="report-date">
+        <div>Fecha de emisión:</div>
+        <strong>${fechaGeneracion}</strong>
+      </div>
+    </header>
+
+    <div class="report-body">
+      <div class="map-container-wrap">
+        <h4 class="map-title">Delimitación Espacial (Google Satélite 30% Sat.)</h4>
+        <div id="printMap"></div>
+      </div>
+
+      <div class="info-container">
+        <h4 class="section-heading">Atributos e Información del Recinto</h4>
+        <div class="attr-grid">
+          <div class="attr-box full-width">
+            <div class="attr-label">Nombre del Recinto</div>
+            <div class="attr-value">${recintoNombre}</div>
+          </div>
+          <div class="attr-box">
+            <div class="attr-label">Código Oficial</div>
+            <div class="attr-value">${recintoCod}</div>
+          </div>
+          <div class="attr-box">
+            <div class="attr-label">Estado / Uso</div>
+            <div class="attr-value">${recintoEstado}</div>
+          </div>
+          <div class="attr-box">
+            <div class="attr-label">Superficie Total</div>
+            <div class="attr-value">${recintoSup}</div>
+          </div>
+          <div class="attr-box">
+            <div class="attr-label">Zona Territorial</div>
+            <div class="attr-value">${recintoZona}</div>
+          </div>
+          <div class="attr-box">
+            <div class="attr-label">Núcleo Urbano</div>
+            <div class="attr-value">${recintoNucleo}</div>
+          </div>
+          <div class="attr-box">
+            <div class="attr-label">Titularidad</div>
+            <div class="attr-value">${recintoTitularidad}</div>
+          </div>
+          <div class="attr-box full-width">
+            <div class="attr-label">Contrato / Lote Asignado</div>
+            <div class="attr-value">${recintoContrato}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="report-footer">
+      <div>Tesela Gestión Cultural y Patrimonio S.L. &bull; www.teselaestudio.es</div>
+      <div>Fuente de datos: OGC API Features &bull; Mergin Maps</div>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const featureData = ${featureJsonString};
+    const map = L.map('printMap', {
+      zoomControl: false,
+      attributionControl: false
+    });
+
+    const satLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      className: 'print-tile-pane'
+    }).addTo(map);
+
+    const geoLayer = L.geoJSON(featureData, {
+      style: {
+        color: '#0284c7',
+        weight: 3.5,
+        fillColor: '#38bdf8',
+        fillOpacity: 0.45
+      }
+    }).addTo(map);
+
+    const bounds = geoLayer.getBounds();
+    map.fitBounds(bounds, { padding: [35, 35] });
+
+    let printed = false;
+    function triggerPrint() {
+      if (!printed) {
+        printed = true;
+        setTimeout(() => {
+          window.print();
+        }, 600);
+      }
+    }
+
+    satLayer.on('load', triggerPrint);
+    setTimeout(triggerPrint, 1500);
+  </script>
+</body>
+</html>`;
+
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
 }
 
 // Iniciar al cargar

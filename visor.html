@@ -36,12 +36,45 @@
         </div>
       </div>
 
-      <!-- Selector de Capa Base (Google Satélite activo por defecto) -->
+      <!-- Selector de Capa Base y Control de Saturación (Google Satélite activo por defecto a 30%) -->
       <div class="topbar-center">
-        <button class="basemap-btn active" data-base="googleSat" title="Google Satélite">Google Satélite</button>
-        <button class="basemap-btn" data-base="googleHybrid" title="Google Híbrido con Calles">Google Híbrido</button>
-        <button class="basemap-btn" data-base="dark" title="Capa Base CartoDB Dark">Modo Oscuro</button>
-        <button class="basemap-btn" data-base="pnoa" title="Ortofoto Satélite PNOA / IGN">PNOA IGN</button>
+        <div class="basemap-group">
+          <button class="basemap-btn active" data-base="googleSat" title="Google Satélite">Google Satélite</button>
+          <button class="basemap-btn" data-base="googleHybrid" title="Google Híbrido con Calles">Google Híbrido</button>
+          <button class="basemap-btn" data-base="dark" title="Capa Base CartoDB Dark">Modo Oscuro</button>
+          <button class="basemap-btn" data-base="pnoa" title="Ortofoto Satélite PNOA / IGN">PNOA IGN</button>
+        </div>
+
+        <!-- Control Popover de Saturación Dinámica -->
+        <div class="sat-control-wrapper">
+          <button id="btnSatToggle" class="btn-sat-toggle" title="Ajustar saturación del mapa base">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span>Sat: <strong id="satValDisplay">30%</strong></span>
+          </button>
+          <div id="satPopover" class="sat-popover">
+            <div class="sat-header">
+              <span>Saturación Base</span>
+              <span id="satValPopover" class="sat-val-badge">30%</span>
+            </div>
+            <input type="range" id="satSlider" class="sat-slider" min="0" max="150" value="30" step="5" />
+            <div class="sat-presets">
+              <button class="sat-preset-btn" data-val="0">0%</button>
+              <button class="sat-preset-btn" data-val="30">30%</button>
+              <button class="sat-preset-btn" data-val="70">70%</button>
+              <button class="sat-preset-btn" data-val="100">100%</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Usuario y Acciones -->
@@ -119,7 +152,49 @@
             </div>
           </section>
 
-          <!-- 2. PESTAÑAS DE FILTROS POR CAPA -->
+          <!-- 2. GESTOR CENTRALIZADO DE CAPAS (DESPLEGABLE) -->
+          <details class="layers-accordion" open>
+            <summary class="layers-accordion-summary">
+              <span>Capas Activas en Mapa</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </summary>
+            <div class="layers-list">
+              <div class="layer-item-row">
+                <div class="layer-item-info">
+                  <span class="layer-color-indicator trees"></span>
+                  <span>CT_arbolado_y_palmeras</span>
+                </div>
+                <label class="switch" title="Activar/Desactivar Arbolado">
+                  <input type="checkbox" id="toggleArbolado" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="layer-item-row">
+                <div class="layer-item-info">
+                  <span class="layer-color-indicator surfaces"></span>
+                  <span>CT_superficies</span>
+                </div>
+                <label class="switch" title="Activar/Desactivar Superficies">
+                  <input type="checkbox" id="toggleSuperficies" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="layer-item-row">
+                <div class="layer-item-info">
+                  <span class="layer-color-indicator zones"></span>
+                  <span>CT_recintos</span>
+                </div>
+                <label class="switch" title="Activar/Desactivar Recintos">
+                  <input type="checkbox" id="toggleRecintos" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <!-- 3. PESTAÑAS DE FILTROS POR CAPA -->
           <section class="filters-section">
             <div class="section-label">Filtros por Capas OGC</div>
 
@@ -131,13 +206,6 @@
 
             <!-- Pestaña 1: CT_arbolado_y_palmeras -->
             <div id="tab-arbolado" class="tab-content active">
-              <div class="layer-toggle-wrap">
-                <span class="layer-toggle-title">Capa Visible en Mapa</span>
-                <label class="switch">
-                  <input type="checkbox" id="toggleArbolado" checked />
-                  <span class="slider"></span>
-                </label>
-              </div>
 
               <div class="filter-group">
                 <label class="filter-label" for="filterArboladoTipo">Tipo de Vegetación</label>
@@ -209,14 +277,6 @@
 
             <!-- Pestaña 2: CT_recintos -->
             <div id="tab-recintos" class="tab-content">
-              <div class="layer-toggle-wrap">
-                <span class="layer-toggle-title">Capa Visible en Mapa</span>
-                <label class="switch">
-                  <input type="checkbox" id="toggleRecintos" checked />
-                  <span class="slider"></span>
-                </label>
-              </div>
-
               <div class="filter-group">
                 <label class="filter-label" for="filterRecintosZona">Zona Territorial</label>
                 <select id="filterRecintosZona" class="filter-select">
@@ -251,14 +311,6 @@
 
             <!-- Pestaña 3: Ct_superficies -->
             <div id="tab-superficies" class="tab-content">
-              <div class="layer-toggle-wrap">
-                <span class="layer-toggle-title">Capa Visible en Mapa</span>
-                <label class="switch">
-                  <input type="checkbox" id="toggleSuperficies" checked />
-                  <span class="slider"></span>
-                </label>
-              </div>
-
               <div class="filter-group">
                 <label class="filter-label" for="filterSuperficiesElemento">Elemento de Superficie</label>
                 <select id="filterSuperficiesElemento" class="filter-select">
@@ -338,6 +390,16 @@
         </div>
 
         <div class="drawer-actions">
+          <button id="btnExportRecintoPDF" class="btn-drawer-pdf" style="display: none;" title="Generar informe técnico imprimible / PDF de este recinto">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Exportar Recinto a PDF</span>
+          </button>
           <button id="btnZoomFeature" class="btn-drawer-zoom">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
