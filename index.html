@@ -3,86 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visor Cartagena | Acceso</title>
+  <title>TESELAB | Acceso</title>
   <link rel="icon" type="image/png" href="recursos/favicon tesela.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..800;1,400..800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Fondo Vectorial Abstracto Nothing: Paisaje Topográfico en Matriz de Puntos (100% nítido, sin pixelación) -->
-  <div class="background-stage" aria-hidden="true">
-    <svg class="landscape-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <!-- Rejilla de micro-puntos Nothing -->
-        <pattern id="dotMatrix" width="22" height="22" patternUnits="userSpaceOnUse">
-          <circle cx="11" cy="11" r="0.9" fill="rgba(255, 255, 255, 0.12)" />
-        </pattern>
-
-        <!-- Gradiente de iluminación ambiental suave sobre #121212 -->
-        <radialGradient id="ambientGlow" cx="50%" cy="46%" r="55%">
-          <stop offset="0%" stop-color="#2a3240" stop-opacity="0.45" />
-          <stop offset="45%" stop-color="#191c24" stop-opacity="0.3" />
-          <stop offset="85%" stop-color="#121212" stop-opacity="0.9" />
-          <stop offset="100%" stop-color="#121212" stop-opacity="1" />
-        </radialGradient>
-
-        <!-- Gradientes luminosos para curvas topográficas -->
-        <linearGradient id="curveGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="rgba(255, 255, 255, 0.05)" />
-          <stop offset="45%" stop-color="rgba(255, 255, 255, 0.45)" />
-          <stop offset="55%" stop-color="rgba(56, 189, 248, 0.55)" />
-          <stop offset="100%" stop-color="rgba(255, 255, 255, 0.05)" />
-        </linearGradient>
-
-        <linearGradient id="curveGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="rgba(255, 255, 255, 0.04)" />
-          <stop offset="50%" stop-color="rgba(255, 255, 255, 0.35)" />
-          <stop offset="100%" stop-color="rgba(255, 255, 255, 0.04)" />
-        </linearGradient>
-
-        <linearGradient id="horizonGlow" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stop-color="#121212" stop-opacity="1" />
-          <stop offset="50%" stop-color="#1e232e" stop-opacity="0.25" />
-          <stop offset="100%" stop-color="#121212" stop-opacity="0" />
-        </linearGradient>
-      </defs>
-
-      <!-- Fondo Base #121212 -->
-      <rect width="100%" height="100%" fill="#121212" />
-
-      <!-- Resplandor ambiental de profundidad detrás de la tarjeta -->
-      <rect width="100%" height="100%" fill="url(#ambientGlow)" />
-
-      <!-- Matriz de puntos uniforme -->
-      <rect width="100%" height="100%" fill="url(#dotMatrix)" opacity="0.85" />
-
-      <!-- Relieve topográfico abstracto en matriz de puntos punteados (Estilo Nothing) -->
-      <g fill="none" stroke-linecap="round">
-        <!-- Cordillera lejana -->
-        <path d="M -60 520 Q 220 380, 540 460 T 1140 430 Q 1320 400, 1500 450" stroke="url(#curveGrad2)" stroke-width="2.5" stroke-dasharray="1.5 14" opacity="0.6" />
-        <path d="M -60 550 Q 260 410, 580 490 T 1180 460 Q 1340 430, 1500 480" stroke="url(#curveGrad2)" stroke-width="2" stroke-dasharray="1.5 12" opacity="0.65" />
-        <path d="M -60 580 Q 300 440, 620 520 T 1220 490 Q 1360 460, 1500 510" stroke="url(#curveGrad1)" stroke-width="2.5" stroke-dasharray="1.5 12" opacity="0.75" />
-
-        <!-- Relieve medio -->
-        <path d="M -60 620 Q 200 490, 480 570 T 1060 540 Q 1280 500, 1500 560" stroke="url(#curveGrad1)" stroke-width="3" stroke-dasharray="2 13" opacity="0.85" />
-        <path d="M -60 660 Q 240 530, 520 610 T 1100 580 Q 1300 540, 1500 600" stroke="url(#curveGrad2)" stroke-width="2.5" stroke-dasharray="2 14" opacity="0.7" />
-        <path d="M -60 700 Q 280 570, 560 650 T 1140 620 Q 1320 580, 1500 640" stroke="url(#curveGrad1)" stroke-width="3" stroke-dasharray="2 12" opacity="0.8" />
-
-        <!-- Primer término del paisaje -->
-        <path d="M -60 750 Q 350 620, 680 710 T 1240 670 Q 1380 640, 1500 700" stroke="url(#curveGrad1)" stroke-width="3" stroke-dasharray="2.5 14" opacity="0.9" />
-        <path d="M -60 800 Q 400 670, 740 760 T 1300 720 Q 1420 690, 1500 750" stroke="url(#curveGrad2)" stroke-width="2.5" stroke-dasharray="2 13" opacity="0.75" />
-        <path d="M -60 850 Q 450 720, 800 810 T 1360 770 Q 1440 740, 1500 800" stroke="url(#curveGrad1)" stroke-width="2.5" stroke-dasharray="2 14" opacity="0.8" />
-      </g>
-
-      <!-- Gradiente inferior para asentar la base en #121212 -->
-      <rect y="650" width="100%" height="250" fill="url(#horizonGlow)" />
-    </svg>
-  </div>
+  <!-- Fondo Color Sólido #121212 -->
+  <div class="background-stage" aria-hidden="true"></div>
 
   <!-- Tarjeta de Vidrio Esmerilado Centrada -->
   <main class="glass-window">
-    <!-- Barra superior sutil y minimalista (sin puntos de colores) -->
+    <!-- Barra superior minimalista (sin dirección web) -->
     <header class="window-header">
-      <div class="window-address">visor.cartagena.es</div>
       <!-- Icono web que redirecciona a www.teselaestudio.es -->
       <a
         href="https://www.teselaestudio.es"
@@ -112,7 +47,8 @@
         </a>
       </div>
 
-      <h1 class="auth-title">Visor Cartagena</h1>
+      <!-- Título TESELAB con tipografía Montserrat -->
+      <h1 class="auth-title">TESELAB</h1>
       <p class="auth-subtitle">Acceso restringido a la plataforma territorial</p>
 
       <!-- Caja de Alerta / Error -->

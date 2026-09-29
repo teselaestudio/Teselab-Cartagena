@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..800;1,400..800&family=Inter:wght@400;500;600&display=swap');
+
 :root {
   --bg-deep: #121212;
-  --glass-surface: rgba(22, 22, 24, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-focus: rgba(255, 255, 255, 0.38);
-  --glass-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.22);
-  --glass-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.85), 0 0 1px rgba(255, 255, 255, 0.15);
+  --glass-surface: rgba(26, 26, 30, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-focus: rgba(255, 255, 255, 0.35);
+  --glass-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.16);
+  --glass-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.9), 0 0 1px rgba(255, 255, 255, 0.12);
   
   --text-main: #f3f4f6;
   --text-muted: #9ca3af;
@@ -13,7 +15,8 @@
   --radius-window: 24px;
   --radius-sm: 10px;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", sans-serif;
+  --font-title: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 * {
@@ -37,7 +40,7 @@ body {
 }
 
 /* ==========================================================================
-   Fondo Vectorial Abstracto Nothing: Paisaje Topográfico en Matriz de Puntos
+   Fondo Color Sólido #121212
    ========================================================================== */
 .background-stage {
   position: fixed;
@@ -45,19 +48,10 @@ body {
   pointer-events: none;
   z-index: 0;
   background-color: var(--bg-deep);
-  overflow: hidden;
-}
-
-.landscape-svg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: absolute;
-  inset: 0;
 }
 
 /* ==========================================================================
-   Ventana / Tarjeta de Vidrio Esmerilado Centrada
+   Tarjeta de Vidrio Esmerilado Centrada
    ========================================================================== */
 .glass-window {
   position: relative;
@@ -65,8 +59,8 @@ body {
   width: 100%;
   max-width: 480px;
   background: var(--glass-surface);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-window);
   box-shadow: var(--glass-shadow);
@@ -85,10 +79,10 @@ body {
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.3) 0%,
-    rgba(255, 255, 255, 0.08) 40%,
-    rgba(255, 255, 255, 0.02) 70%,
-    rgba(255, 255, 255, 0.12) 100%
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0.01) 70%,
+    rgba(255, 255, 255, 0.1) 100%
   );
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -97,26 +91,18 @@ body {
   pointer-events: none;
 }
 
-/* Barra superior sutil */
+/* Barra superior minimalista */
 .window-header {
-  height: 46px;
+  height: 44px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 0 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.015);
 }
 
-.window-address {
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  user-select: none;
-}
-
-/* Icono web enlazado a www.teselaestudio.es */
+/* Icono web que redirecciona a www.teselaestudio.es */
 .web-link-icon {
   display: inline-flex;
   align-items: center;
@@ -166,12 +152,15 @@ body {
   transform: scale(1.03);
 }
 
+/* Título TESELAB con tipografía Montserrat */
 .auth-title {
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-family: var(--font-title);
+  font-size: 1.6rem;
+  font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.35rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
 }
 
 .auth-subtitle {
@@ -192,7 +181,7 @@ body {
 
 .form-label {
   display: block;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -204,7 +193,7 @@ body {
   width: 100%;
   padding: 0.85rem 1rem;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: var(--radius-sm);
   color: #ffffff;
   font-size: 0.95rem;
@@ -214,41 +203,43 @@ body {
 }
 
 .form-input:focus {
-  border-color: rgba(255, 255, 255, 0.38);
+  border-color: rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
 }
 
 .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.22);
 }
 
 /* Botón Esmerilado Luminoso */
 .btn-glass-primary {
   width: 100%;
   padding: 0.9rem 1.25rem;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-sm);
   color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-family: var(--font-title);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
-  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   margin-top: 1.5rem;
 }
 
 .btn-glass-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.1) 100%);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border-color: rgba(255, 255, 255, 0.35);
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .btn-glass-primary:active:not(:disabled) {
@@ -349,9 +340,11 @@ body {
 }
 
 .landing-title {
-  font-size: 2.3rem;
+  font-family: var(--font-title);
+  font-size: 2.2rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: #ffffff;
   margin-bottom: 0.6rem;
 }
@@ -392,8 +385,10 @@ body {
 }
 
 .card-title {
+  font-family: var(--font-title);
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   color: #ffffff;
   margin-bottom: 0.35rem;
 }
@@ -453,6 +448,6 @@ body {
     grid-template-columns: 1fr;
   }
   .landing-title {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
   }
 }
