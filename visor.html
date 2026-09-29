@@ -22,79 +22,108 @@
 <body>
   <div class="visor-layout">
     <!-- Barra Superior -->
+    <!-- Barra Superior Limpia y Despejada -->
     <header class="visor-topbar">
       <div class="topbar-left">
-        <a href="landing.html" title="Volver a Inicio">
+        <!-- Botón para Desplegar / Colapsar Menú de Filtros (Requirement 1) -->
+        <button id="btnToggleLeftMenu" class="btn-topbar-menu" title="Desplegar / Colapsar Menú de Filtros">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+          <span class="btn-menu-txt">Menú</span>
+        </button>
+
+        <a href="landing.html" class="topbar-logo-link" title="Volver a Inicio">
           <img src="recursos/logo blanco.png" alt="Tesela Estudio" class="topbar-logo" />
         </a>
+
         <div class="topbar-title-wrap">
-          <span class="topbar-title">TESELAB Cartagena</span>
-          <div class="ogc-live-badge">
+          <span class="topbar-title">TESELAB</span>
+          <div class="ogc-live-badge" title="Conexión OGC API en vivo">
             <span class="pulse-dot"></span>
-            <span>OGC API</span>
+            <span class="ogc-badge-txt">OGC API</span>
           </div>
         </div>
       </div>
 
-      <!-- Selector de Capa Base y Control de Saturación (Google Satélite activo por defecto a 30%) -->
-      <div class="topbar-center">
-        <div class="basemap-group">
-          <button class="basemap-btn active" data-base="googleSat" title="Google Satélite">Google Satélite</button>
-          <button class="basemap-btn" data-base="googleHybrid" title="Google Híbrido con Calles">Google Híbrido</button>
-          <button class="basemap-btn" data-base="dark" title="Capa Base CartoDB Dark">Modo Oscuro</button>
-          <button class="basemap-btn" data-base="pnoa" title="Ortofoto Satélite PNOA / IGN">PNOA IGN</button>
-        </div>
-
-        <!-- Control Popover de Saturación Dinámica -->
-        <div class="sat-control-wrapper">
-          <button id="btnSatToggle" class="btn-sat-toggle" title="Ajustar saturación del mapa base">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="5"></circle>
-              <line x1="12" y1="1" x2="12" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="23"></line>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              <line x1="1" y1="12" x2="3" y2="12"></line>
-              <line x1="21" y1="12" x2="23" y2="12"></line>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-            <span>Sat: <strong id="satValDisplay">30%</strong></span>
-          </button>
-          <div id="satPopover" class="sat-popover">
-            <div class="sat-header">
-              <span>Saturación Base</span>
-              <span id="satValPopover" class="sat-val-badge">30%</span>
-            </div>
-            <input type="range" id="satSlider" class="sat-slider" min="0" max="150" value="30" step="5" />
-            <div class="sat-presets">
-              <button class="sat-preset-btn" data-val="0">0%</button>
-              <button class="sat-preset-btn" data-val="30">30%</button>
-              <button class="sat-preset-btn" data-val="70">70%</button>
-              <button class="sat-preset-btn" data-val="100">100%</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Usuario y Acciones -->
+      <!-- Derecha: Botón Desplegable para Integrar la Barra Superior (Requirement 3) -->
       <div class="topbar-right">
-        <span class="user-email-tag" id="userEmail">Cargando usuario...</span>
-        <a href="landing.html" class="btn-topbar-action" title="Volver a la Landing Page">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        <button id="btnTopMenuToggle" class="btn-top-menu-toggle" title="Capas base, saturación y opciones">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-          <span>Inicio</span>
-        </a>
-        <button id="logoutBtn" class="btn-topbar-action" title="Cerrar sesión">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          <span>Salir</span>
+          <span class="btn-top-menu-label">Ajustes</span>
+          <span class="sat-quick-pill" id="satValDisplay">Sat: 30%</span>
         </button>
+
+        <!-- Menú Desplegable que integra todos los controles de la barra -->
+        <div id="topMenuDropdown" class="top-menu-dropdown">
+          <div class="top-dropdown-header">
+            <span class="dropdown-heading">Ajustes del Visor y Capa Base</span>
+            <button id="btnCloseTopMenu" class="dropdown-close-btn" title="Cerrar opciones">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="top-dropdown-body">
+            <!-- 1. Capas Base -->
+            <div class="dropdown-block">
+              <div class="dropdown-block-label">Capa Base Cartográfica</div>
+              <div class="dropdown-basemap-grid">
+                <button class="basemap-btn active" data-base="googleSat">Google Satélite</button>
+                <button class="basemap-btn" data-base="googleHybrid">Google Híbrido</button>
+                <button class="basemap-btn" data-base="dark">Modo Oscuro</button>
+                <button class="basemap-btn" data-base="pnoa">PNOA IGN</button>
+              </div>
+            </div>
+
+            <!-- 2. Saturación Dinámica de Satélite -->
+            <div class="dropdown-block">
+              <div class="sat-header">
+                <span class="dropdown-block-label">Saturación del Satélite</span>
+                <span id="satValPopover" class="sat-val-badge">30%</span>
+              </div>
+              <input type="range" id="satSlider" class="sat-slider" min="0" max="150" value="30" step="5" />
+              <div class="sat-presets">
+                <button class="sat-preset-btn" data-val="0">0%</button>
+                <button class="sat-preset-btn" data-val="30">30%</button>
+                <button class="sat-preset-btn" data-val="70">70%</button>
+                <button class="sat-preset-btn" data-val="100">100%</button>
+              </div>
+            </div>
+
+            <!-- 3. Usuario y Sesión -->
+            <div class="dropdown-block user-block">
+              <div class="dropdown-user-row">
+                <span class="user-status-dot"></span>
+                <span id="userEmail" class="dropdown-user-email">Cargando usuario...</span>
+              </div>
+              <div class="dropdown-session-actions">
+                <a href="landing.html" class="btn-dropdown-action" title="Volver a Inicio">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
+                  <span>Inicio</span>
+                </a>
+                <button id="logoutBtn" class="btn-dropdown-action danger" title="Cerrar sesión">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  <span>Salir</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -378,33 +407,48 @@
         </div>
       </aside>
 
-      <!-- Panel Lateral Derecho: Ficha de Información del Elemento Seleccionado -->
-      <aside id="rightDrawer" class="right-drawer">
-        <div class="mobile-sheet-handle" aria-hidden="true"></div>
-        <header class="drawer-header">
-          <div>
+      <!-- Panel Lateral / Bottom-Sheet: Ficha de Información del Elemento Seleccionado -->
+      <aside id="rightDrawer" class="right-drawer peek">
+        <!-- Barra de arrastre táctil / indicador de deslizamiento -->
+        <div id="drawerDragHandle" class="drawer-drag-handle" title="Toca o desliza para ampliar / reducir">
+          <span class="drag-bar"></span>
+        </div>
+
+        <header class="drawer-header" id="drawerHeader">
+          <div class="drawer-header-info">
             <span id="drawerLayerBadge" class="drawer-layer-badge arbolado">Capa</span>
             <h3 id="drawerTitle" class="drawer-title">Detalle del Elemento</h3>
           </div>
-          <button id="btnCloseDrawer" class="drawer-close-btn" title="Cerrar panel de información">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+          <div class="drawer-header-actions">
+            <!-- Botón para Expandir (85vh) / Reducir a 1/3 (33vh) -->
+            <button id="btnToggleDrawerExpand" class="drawer-header-btn expand-btn" title="Expandir o reducir tamaño">
+              <svg id="drawerExpandIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+              <span id="drawerExpandTxt" class="expand-btn-txt">Expandir</span>
+            </button>
+            <button id="btnCloseDrawer" class="drawer-header-btn close-btn" title="Cerrar panel de información">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
         </header>
 
-        <div class="drawer-content">
-          <table class="feature-attr-table">
-            <tbody id="featureAttributesBody">
-              <!-- Se rellena dinámicamente con los atributos del OGC API -->
-            </tbody>
-          </table>
-        </div>
-
-        <div class="drawer-actions">
-          <button id="btnExportRecintoPDF" class="btn-drawer-pdf" style="display: none;" title="Generar informe técnico imprimible / PDF de este recinto">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Barra de Acciones Rápidas (siempre visible incluso en 1/3 de pantalla) -->
+        <div class="drawer-quick-bar">
+          <button id="btnZoomFeature" class="btn-drawer-quick" title="Centrar este elemento en el visor">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+            <span>Centrar</span>
+          </button>
+          <button id="btnExportRecintoPDF" class="btn-drawer-quick danger" style="display: none;" title="Generar informe oficial imprimible / PDF (2 páginas)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -413,15 +457,23 @@
             </svg>
             <span>Exportar Recinto a PDF</span>
           </button>
-          <button id="btnZoomFeature" class="btn-drawer-zoom">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              <line x1="11" y1="8" x2="11" y2="14"></line>
-              <line x1="8" y1="11" x2="14" y2="11"></line>
-            </svg>
-            <span>Centrar en Mapa</span>
-          </button>
+        </div>
+
+        <!-- Indicador interactivo para deslizar hacia arriba -->
+        <div id="drawerSwipeHint" class="drawer-swipe-hint" title="Toca para expandir ficha">
+          <svg class="swipe-hint-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+          <span class="swipe-hint-txt">Desliza hacia arriba para ver todos los datos</span>
+        </div>
+
+        <!-- Contenido desplazable con los atributos -->
+        <div class="drawer-content">
+          <table class="feature-attr-table">
+            <tbody id="featureAttributesBody">
+              <!-- Se rellena dinámicamente con los atributos del OGC API -->
+            </tbody>
+          </table>
         </div>
       </aside>
     </div>

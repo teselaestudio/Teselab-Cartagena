@@ -441,7 +441,8 @@ function cleanString(str) {
 }
 
 // ==============================================================================
-// PANEL LATERAL DERECHO (INFORMACIÓN DEL ELEMENTO)
+// PANEL LATERAL / BOTTOM-SHEET (INFORMACIÓN DEL ELEMENTO)
+// Requirement 2: Aparece desde abajo ocupando solo 1/3 de pantalla, con opción de deslizarlo hasta arriba
 // ==============================================================================
 function openFeatureDrawer(feature, layerKey) {
   state.selectedFeature = feature;
@@ -459,7 +460,7 @@ function openFeatureDrawer(feature, layerKey) {
   // Mostrar el botón de exportar a PDF exclusivamente para recintos
   const btnExportPdf = document.getElementById("btnExportRecintoPDF");
   if (btnExportPdf) {
-    btnExportPdf.style.display = layerKey === "recintos" ? "flex" : "none";
+    btnExportPdf.style.display = layerKey === "recintos" ? "inline-flex" : "none";
   }
 
   tableBody.innerHTML = "";
@@ -482,19 +483,146 @@ function openFeatureDrawer(feature, layerKey) {
     tableBody.appendChild(row);
   });
 
+  // Inicializar SIEMPRE en modo 1/3 de pantalla (peek) al pinchar cualquier elemento
+  drawer.classList.remove("expanded");
+  drawer.classList.add("peek");
   drawer.classList.add("open");
+
+  const txt = document.getElementById("drawerExpandTxt");
+  if (txt) txt.textContent = "Expandir";
+  const hint = document.getElementById("drawerSwipeHint");
+  if (hint) {
+    const hintTxt = hint.querySelector(".swipe-hint-txt");
+    if (hintTxt) hintTxt.textContent = "Desliza hacia arriba para ver todos los datos";
+  }
+
+  // Cerrar dropdown de la barra superior si estaba abierto
+  const topMenuDropdown = document.getElementById("topMenuDropdown");
+  const btnTopMenuToggle = document.getElementById("btnTopMenuToggle");
+  if (topMenuDropdown) topMenuDropdown.classList.remove("open");
+  if (btnTopMenuToggle) btnTopMenuToggle.classList.remove("active");
 
   // En dispositivos móviles, colapsar panel izquierdo para dar foco al detalle
   const leftPanel = document.getElementById("leftPanel");
+  const btnToggleLeft = document.getElementById("btnToggleLeftMenu");
   if (leftPanel && window.innerWidth <= 768) {
     leftPanel.classList.add("collapsed");
+    if (btnToggleLeft) btnToggleLeft.classList.remove("active");
   }
 }
 
 function closeFeatureDrawer() {
   const drawer = document.getElementById("rightDrawer");
-  drawer.classList.remove("open");
+  if (drawer) {
+    drawer.classList.remove("open");
+    drawer.classList.remove("expanded");
+    drawer.classList.add("peek");
+  }
   state.selectedFeature = null;
+}
+
+function expandDrawer() {
+  const drawer = document.getElementById("rightDrawer");
+  if (!drawer) return;
+  drawer.classList.remove("peek");
+  drawer.classList.add("expanded");
+  const txt = document.getElementById("drawerExpandTxt");
+  if (txt) txt.textContent = "Reducir";
+  const hint = document.getElementById("drawerSwipeHint");
+  if (hint) {
+    const hintTxt = hint.querySelector(".swipe-hint-txt");
+    if (hintTxt) hintTxt.textContent = "Desliza hacia abajo o pulsa para reducir";
+  }
+}
+
+function collapseDrawerToPeek() {
+  const drawer = document.getElementById("rightDrawer");
+  if (!drawer) return;
+  drawer.classList.remove("expanded");
+  drawer.classList.add("peek");
+  const txt = document.getElementById("drawerExpandTxt");
+  if (txt) txt.textContent = "Expandir";
+  const hint = document.getElementById("drawerSwipeHint");
+  if (hint) {
+    const hintTxt = hint.querySelector(".swipe-hint-txt");
+    if (hintTxt) hintTxt.textContent = "Desliza hacia arriba para ver todos los datos";
+  }
+}
+
+function toggleDrawerExpand() {
+  const drawer = document.getElementById("rightDrawer");
+  if (!drawer) return;
+  if (drawer.classList.contains("expanded")) {
+    collapseDrawerToPeek();
+  } else {
+    expandDrawer();
+  }
+}
+
+function setupDrawerGestures() {
+  const drawer = document.getElementById("rightDrawer");
+  const dragHandle = document.getElementById("drawerDragHandle");
+  const header = document.getElementById("drawerHeader");
+  const swipeHint = document.getElementById("drawerSwipeHint");
+  const btnExpand = document.getElementById("btnToggleDrawerExpand");
+
+  if (btnExpand) {
+    btnExpand.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleDrawerExpand();
+    });
+  }
+  if (swipeHint) {
+    swipeHint.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleDrawerExpand();
+    });
+  }
+  if (dragHandle) {
+    dragHandle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleDrawerExpand();
+    });
+  }
+
+  // Detección táctil de deslizamiento (Swipe up / down)
+  const gestureTargets = [dragHandle, header, swipeHint].filter(Boolean);
+  let touchStartY = null;
+  let touchStartX = null;
+
+  gestureTargets.forEach(el => {
+    el.addEventListener("touchstart", (e) => {
+      if (e.touches && e.touches.length === 1) {
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+      }
+    }, { passive: true });
+
+    el.addEventListener("touchend", (e) => {
+      if (touchStartY === null) return;
+      const touchEndY = e.changedTouches[0].clientY;
+      const touchEndX = e.changedTouches[0].clientX;
+      const deltaY = touchEndY - touchStartY;
+      const deltaX = touchEndX - touchStartX;
+
+      // Asegurar que el gesto es vertical y supera el umbral
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 30) {
+        if (deltaY < -30) {
+          // Deslizó hacia ARRIBA -> expandir a 85vh
+          expandDrawer();
+        } else if (deltaY > 30) {
+          // Deslizó hacia ABAJO -> si está expandido, reducir a 1/3 peek; si ya está en 1/3, cerrar
+          if (drawer.classList.contains("expanded")) {
+            collapseDrawerToPeek();
+          } else {
+            closeFeatureDrawer();
+          }
+        }
+      }
+      touchStartY = null;
+      touchStartX = null;
+    }, { passive: true });
+  });
 }
 
 function formatAttributeKey(key) {
@@ -595,18 +723,60 @@ function setupUIEventListeners() {
     loadAllLayersForCurrentBbox();
   });
 
-  // Plegar / Desplegar panel izquierdo
+  // Plegar / Desplegar panel izquierdo (Requirement 1)
   const leftPanel = document.getElementById("leftPanel");
+  const btnToggleLeft = document.getElementById("btnToggleLeftMenu");
+
+  if (btnToggleLeft) {
+    btnToggleLeft.addEventListener("click", () => {
+      const isCollapsed = leftPanel.classList.toggle("collapsed");
+      btnToggleLeft.classList.toggle("active", !isCollapsed);
+    });
+  }
+
   document.getElementById("btnCollapsePanel").addEventListener("click", () => {
     leftPanel.classList.add("collapsed");
+    if (btnToggleLeft) btnToggleLeft.classList.remove("active");
   });
 
   document.getElementById("openPanelFab").addEventListener("click", () => {
     leftPanel.classList.remove("collapsed");
+    if (btnToggleLeft) btnToggleLeft.classList.add("active");
   });
 
-  // Cerrar Drawer
+  // Menú Desplegable Integrado de la Barra Superior (Requirement 3)
+  const btnTopMenuToggle = document.getElementById("btnTopMenuToggle");
+  const topMenuDropdown = document.getElementById("topMenuDropdown");
+  const btnCloseTopMenu = document.getElementById("btnCloseTopMenu");
+
+  if (btnTopMenuToggle && topMenuDropdown) {
+    btnTopMenuToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = topMenuDropdown.classList.toggle("open");
+      btnTopMenuToggle.classList.toggle("active", isOpen);
+    });
+
+    if (btnCloseTopMenu) {
+      btnCloseTopMenu.addEventListener("click", (e) => {
+        e.stopPropagation();
+        topMenuDropdown.classList.remove("open");
+        btnTopMenuToggle.classList.remove("active");
+      });
+    }
+
+    document.addEventListener("click", (e) => {
+      if (!topMenuDropdown.contains(e.target) && !btnTopMenuToggle.contains(e.target)) {
+        topMenuDropdown.classList.remove("open");
+        btnTopMenuToggle.classList.remove("active");
+      }
+    });
+  }
+
+  // Cerrar Drawer de Elemento
   document.getElementById("btnCloseDrawer").addEventListener("click", closeFeatureDrawer);
+
+  // Configurar gestos y botones para deslizar/expandir el drawer (Requirement 2)
+  setupDrawerGestures();
 
   // Centrar elemento
   document.getElementById("btnZoomFeature").addEventListener("click", () => {
@@ -730,27 +900,13 @@ function updateVisibleCounters() {
 // CONTROL DE SATURACIÓN DEL FONDO SATÉLITE
 // ==============================================================================
 function initSaturationControl() {
-  const satToggle = document.getElementById("btnSatToggle");
-  const satPopover = document.getElementById("satPopover");
   const satSlider = document.getElementById("satSlider");
 
-  // Valor por defecto: 30%
+  // Valor por defecto: 30% (Requirement: satélite cargado al 30% de saturación)
   setSaturation(30);
 
-  if (satToggle && satPopover) {
-    satToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      satPopover.classList.toggle("open");
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!satPopover.contains(e.target) && !satToggle.contains(e.target)) {
-        satPopover.classList.remove("open");
-      }
-    });
-  }
-
   if (satSlider) {
+    satSlider.value = 30;
     satSlider.addEventListener("input", (e) => {
       const val = parseInt(e.target.value, 10);
       setSaturation(val);
@@ -770,7 +926,7 @@ function setSaturation(value) {
   document.documentElement.style.setProperty("--map-saturation", `${value}%`);
   const satValDisplay = document.getElementById("satValDisplay");
   const satValPopover = document.getElementById("satValPopover");
-  if (satValDisplay) satValDisplay.textContent = `${value}%`;
+  if (satValDisplay) satValDisplay.textContent = `Sat: ${value}%`;
   if (satValPopover) satValPopover.textContent = `${value}%`;
 }
 
