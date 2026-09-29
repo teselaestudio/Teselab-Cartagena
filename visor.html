@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Visor Cartográfico | TESELAB Cartagena</title>
   <link rel="icon" type="image/png" href="recursos/favicon tesela.png" />
 
@@ -120,6 +120,7 @@
 
       <!-- Panel Izquierdo: Resumen General y Pestañas de Filtros -->
       <aside id="leftPanel" class="left-panel">
+        <div class="mobile-sheet-handle" aria-hidden="true"></div>
         <div class="panel-header">
           <h2 class="panel-title">Panel Cartográfico</h2>
           <button id="btnCollapsePanel" class="panel-collapse-btn" title="Ocultar panel">
@@ -130,6 +131,17 @@
         </div>
 
         <div class="panel-scroll-content">
+          <!-- SELECTOR DE CAPA BASE EN MÓVIL -->
+          <section class="basemap-section-mobile">
+            <div class="section-label">Capa Base Cartográfica</div>
+            <div class="basemap-grid-mobile">
+              <button class="basemap-btn active" data-base="googleSat">Google Satélite</button>
+              <button class="basemap-btn" data-base="googleHybrid">Google Híbrido</button>
+              <button class="basemap-btn" data-base="dark">Modo Oscuro</button>
+              <button class="basemap-btn" data-base="pnoa">PNOA IGN</button>
+            </div>
+          </section>
+
           <!-- 1. RESUMEN GENERAL DE ELEMENTOS -->
           <section class="summary-section">
             <div class="section-label">
@@ -368,6 +380,7 @@
 
       <!-- Panel Lateral Derecho: Ficha de Información del Elemento Seleccionado -->
       <aside id="rightDrawer" class="right-drawer">
+        <div class="mobile-sheet-handle" aria-hidden="true"></div>
         <header class="drawer-header">
           <div>
             <span id="drawerLayerBadge" class="drawer-layer-badge arbolado">Capa</span>

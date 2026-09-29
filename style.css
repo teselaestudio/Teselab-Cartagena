@@ -449,13 +449,62 @@ body {
 }
 
 @media (max-width: 720px) {
+  body {
+    padding: 1rem;
+  }
   .window-body-centered {
-    padding: 2rem 1.5rem;
+    padding: 2rem 1.25rem;
   }
   .grid-cards {
     grid-template-columns: 1fr;
   }
   .landing-title {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
+  }
+  .user-pill {
+    max-width: 140px;
+    overflow: hidden;
+  }
+  .user-pill span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 0.75rem;
+  }
+  .window-header {
+    padding: 0 0.85rem;
+  }
+  .user-pill {
+    display: none;
+  }
+  .brand-logo {
+    max-width: 180px;
+    max-height: 40px;
+  }
+  .auth-title {
+    font-size: 1.35rem;
+  }
+  .auth-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+  .landing-title {
+    font-size: 1.35rem;
+  }
+  .landing-subtitle {
+    font-size: 0.84rem;
+    margin-bottom: 1.5rem;
+  }
+  .btn-consultar {
+    padding: 0.85rem 1.25rem;
+    font-size: 0.82rem;
+  }
+  .form-input {
+    font-size: 16px !important; /* Evita auto-zoom en iOS Safari */
   }
 }

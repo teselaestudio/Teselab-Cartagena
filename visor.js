@@ -483,6 +483,12 @@ function openFeatureDrawer(feature, layerKey) {
   });
 
   drawer.classList.add("open");
+
+  // En dispositivos móviles, colapsar panel izquierdo para dar foco al detalle
+  const leftPanel = document.getElementById("leftPanel");
+  if (leftPanel && window.innerWidth <= 768) {
+    leftPanel.classList.add("collapsed");
+  }
 }
 
 function closeFeatureDrawer() {
@@ -656,6 +662,11 @@ function setBasemap(baseKey) {
     state.basemaps[baseKey].bringToBack();
     state.activeBasemap = baseKey;
   }
+  // Sincronizar estado visual de todos los botones (escritorio y móvil)
+  document.querySelectorAll(".basemap-btn").forEach(btn => {
+    if (btn.dataset.base === baseKey) btn.classList.add("active");
+    else btn.classList.remove("active");
+  });
 }
 
 function readFiltersFromUI() {
