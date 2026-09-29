@@ -63,7 +63,8 @@ function initMap() {
     zoom: 15,
     minZoom: 11,
     maxZoom: 21,
-    zoomControl: false
+    zoomControl: false,
+    preferCanvas: true
   });
 
   L.control.zoom({ position: "bottomright" }).addTo(state.map);
@@ -116,21 +117,26 @@ function initMap() {
     onEachFeature: onEachFeatureSuperficie
   }).addTo(state.map);
 
-  // Agrupación de clústeres para arbolado: a partir de zoom 16 se desactiva para ver la simbología exacta de QGIS
+  // Agrupación optimizada para arbolado: a partir de zoom 15 (escala urbana) se muestran todos los árboles individuales con su simbología de QGIS
   state.layers.arbolado = L.markerClusterGroup({
     clusterPane: "arboladoPane",
     showCoverageOnHover: false,
-    maxClusterRadius: 40,
-    disableClusteringAtZoom: 16
+    maxClusterRadius: 35,
+    disableClusteringAtZoom: 15,
+    chunkedLoading: true,
+    chunkedInterval: 50,
+    chunkedDelay: 20,
+    removeOutsideVisibleBounds: true,
+    animate: false
   }).addTo(state.map);
 
-  // Recarga al mover el mapa (con debounce)
+  // Recarga al mover el mapa (con debounce y cancelación automática)
   let moveTimeout = null;
   state.map.on("moveend", () => {
     clearTimeout(moveTimeout);
     moveTimeout = setTimeout(() => {
       loadAllLayersForCurrentBbox();
-    }, 350);
+    }, 300);
   });
 }
 
@@ -313,10 +319,20 @@ function onEachFeatureSuperficie(feature, layer) {
 // ==============================================================================
 // CARGA Y FILTRADO ROBUSTO DE DATOS OGC API
 // ==============================================================================
+let activeLoadController = null;
+
 async function loadAllLayersForCurrentBbox() {
   if (!state.map) return;
 
-  const bounds = state.map.getBounds();
+  // Cancelar peticiones pendientes previas para evitar condiciones de carrera al mover el mapa
+  if (activeLoadController) {
+    activeLoadController.abort();
+  }
+  activeLoadController = new AbortController();
+  const { signal } = activeLoadController;
+
+  // Aplicar un ligero margen (pad 15%) al bounding box para precargar el entorno inmediato y evitar bordes vacíos
+  const bounds = state.map.getBounds().pad(0.15);
   const bbox = [
     bounds.getWest().toFixed(6),
     bounds.getSouth().toFixed(6),
@@ -330,59 +346,98 @@ async function loadAllLayersForCurrentBbox() {
     const promises = [];
 
     if (state.visibility.arbolado) {
-      promises.push(fetchCollectionItems("arbolado", bbox, state.filters.arbolado));
+      promises.push(fetchCollectionItems("arbolado", bbox, state.filters.arbolado, signal));
     } else {
       state.layers.arbolado.clearLayers();
       state.visibleCounts.arbolado = 0;
     }
 
     if (state.visibility.recintos) {
-      promises.push(fetchCollectionItems("recintos", bbox, state.filters.recintos));
+      promises.push(fetchCollectionItems("recintos", bbox, state.filters.recintos, signal));
     } else {
       state.layers.recintos.clearLayers();
       state.visibleCounts.recintos = 0;
     }
 
     if (state.visibility.superficies) {
-      promises.push(fetchCollectionItems("superficies", bbox, state.filters.superficies));
+      promises.push(fetchCollectionItems("superficies", bbox, state.filters.superficies, signal));
     } else {
       state.layers.superficies.clearLayers();
       state.visibleCounts.superficies = 0;
     }
 
-    await Promise.all(promises);
-    updateVisibleCounters();
+    await Promise.allSettled(promises);
+    if (!signal.aborted) {
+      updateVisibleCounters();
+    }
   } catch (err) {
+    if (err.name === "AbortError") return;
     console.error("Error al consultar OGC API:", err);
   } finally {
-    showLoader(false);
+    if (!signal.aborted) {
+      showLoader(false);
+    }
   }
 }
 
-async function fetchCollectionItems(layerKey, bbox, filters = {}) {
+async function fetchCollectionItems(layerKey, bbox, filters = {}, signal = null) {
   const collectionName = COLLECTIONS[layerKey];
-  let url = `${OGC_API_BASE}/collections/${collectionName}/items?bbox=${bbox}&limit=1500`;
+  const PAGE_LIMIT = 10000; // Máximo soportado por el servidor Mergin Maps OGC API por consulta
+  const MAX_FEATURES_CAP = 25000; // Límite máximo acumulativo de seguridad
 
-  // Construir parámetros de consulta OGC API
-  if (layerKey === "arbolado") {
-    if (filters.tipo) url += `&Tipo=${encodeURIComponent(filters.tipo)}`;
-    if (filters.zona) url += `&Zona=${encodeURIComponent(filters.zona)}`;
-    if (filters.tamano) url += `&Tamano=${encodeURIComponent(filters.tamano)}`;
-    if (filters.especie) url += `&Especie=${encodeURIComponent(filters.especie)}`;
-  } else if (layerKey === "recintos") {
-    if (filters.zona) url += `&Zona=${encodeURIComponent(filters.zona)}`;
-    if (filters.estado) url += `&Estado=${encodeURIComponent(filters.estado)}`;
-  } else if (layerKey === "superficies") {
-    if (filters.elemento) url += `&Elemento=${encodeURIComponent(filters.elemento)}`;
-    if (filters.zona) url += `&Zona=${encodeURIComponent(filters.zona)}`;
-    if (filters.contrato) url += `&Contrato=${encodeURIComponent(filters.contrato)}`;
+  let offset = 0;
+  let allFeatures = [];
+  let keepFetching = true;
+
+  while (keepFetching) {
+    let url = `${OGC_API_BASE}/collections/${collectionName}/items?bbox=${bbox}&limit=${PAGE_LIMIT}&offset=${offset}`;
+
+    // Construir parámetros de consulta OGC API
+    if (layerKey === "arbolado") {
+      if (filters.tipo) url += `&Tipo=${encodeURIComponent(filters.tipo)}`;
+      if (filters.zona) url += `&Zona=${encodeURIComponent(filters.zona)}`;
+      if (filters.tamano) url += `&Tamano=${encodeURIComponent(filters.tamano)}`;
+      if (filters.especie) url += `&Especie=${encodeURIComponent(filters.especie)}`;
+    } else if (layerKey === "recintos") {
+      if (filters.zona) url += `&Zona=${encodeURIComponent(filters.zona)}`;
+      if (filters.estado) url += `&Estado=${encodeURIComponent(filters.estado)}`;
+    } else if (layerKey === "superficies") {
+      if (filters.elemento) url += `&Elemento=${encodeURIComponent(filters.elemento)}`;
+      if (filters.zona) url += `&Zona=${encodeURIComponent(filters.zona)}`;
+      if (filters.contrato) url += `&Contrato=${encodeURIComponent(filters.contrato)}`;
+    }
+
+    const response = await fetch(url, { signal });
+    if (!response.ok) {
+      if (response.status === 404 || response.status === 500) {
+        console.warn(`[OGC API] ${collectionName} devolvió status ${response.status} en offset ${offset}`);
+        break;
+      }
+      throw new Error(`HTTP ${response.status} en ${collectionName}`);
+    }
+
+    const data = await response.json();
+    const batch = data.features || [];
+    allFeatures = allFeatures.concat(batch);
+
+    // Condición de parada de paginación:
+    // 1. Llegamos al final de los elementos (menos del límite pedido o batch vacío)
+    // 2. Ya alcanzamos el número total de coincidencias indicado por el servidor OGC
+    // 3. O alcanzamos el tope de seguridad MAX_FEATURES_CAP
+    if (
+      batch.length < PAGE_LIMIT ||
+      (typeof data.numberMatched === "number" && allFeatures.length >= data.numberMatched) ||
+      allFeatures.length >= MAX_FEATURES_CAP
+    ) {
+      keepFetching = false;
+    } else {
+      offset += PAGE_LIMIT;
+    }
   }
 
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`HTTP ${response.status} en ${collectionName}`);
+  if (signal && signal.aborted) return;
 
-  const data = await response.json();
-  let features = data.features || [];
+  let features = allFeatures;
 
   // Filtrado adicional de búsqueda libre (búsqueda insensible a mayúsculas y acentos)
   if (filters.search && filters.search.trim()) {
@@ -409,9 +464,10 @@ async function fetchCollectionItems(layerKey, bbox, filters = {}) {
     });
   }
 
+  if (signal && signal.aborted) return;
+
   // Renderizar en las capas de Leaflet
   if (layerKey === "arbolado") {
-    state.layers.arbolado.clearLayers();
     const markers = [];
     features.forEach(f => {
       if (f.geometry && f.geometry.type === "Point") {
@@ -419,6 +475,10 @@ async function fetchCollectionItems(layerKey, bbox, filters = {}) {
         markers.push(createArboladoMarker(f, [lat, lng]));
       }
     });
+
+    if (signal && signal.aborted) return;
+
+    state.layers.arbolado.clearLayers();
     state.layers.arbolado.addLayers(markers);
     state.visibleCounts.arbolado = features.length;
   } else if (layerKey === "recintos") {
@@ -1053,8 +1113,8 @@ async function exportRecintoPDF(feature) {
 
   // Consultar en OGC API los elementos de Arbolado y Superficies contenidos en este recinto
   const bbox = computeFeatureBbox(feature);
-  let arboladoUrl = `${OGC_API_BASE}/collections/CT_Arbolado_y_palmeras/items?limit=2000`;
-  let superficiesUrl = `${OGC_API_BASE}/collections/CT_Superficies/items?limit=1000`;
+  let arboladoUrl = `${OGC_API_BASE}/collections/CT_Arbolado_y_palmeras/items?limit=5000`;
+  let superficiesUrl = `${OGC_API_BASE}/collections/CT_Superficies/items?limit=3000`;
 
   if (recintoCod && recintoCod !== "—") {
     arboladoUrl += `&COD_recinto=${encodeURIComponent(recintoCod)}`;
@@ -1078,13 +1138,13 @@ async function exportRecintoPDF(feature) {
     // Fallback a BBOX si por código no devuelve elementos pero existe bbox
     if (arboladoFeatures.length === 0 && bbox && recintoCod && recintoCod !== "—") {
       try {
-        const fbArb = await fetch(`${OGC_API_BASE}/collections/CT_Arbolado_y_palmeras/items?bbox=${bbox}&limit=1000`).then(r => r.json());
+        const fbArb = await fetch(`${OGC_API_BASE}/collections/CT_Arbolado_y_palmeras/items?bbox=${bbox}&limit=5000`).then(r => r.json());
         if (fbArb.features && fbArb.features.length > 0) arboladoFeatures = fbArb.features;
       } catch (_) {}
     }
     if (superficiesFeatures.length === 0 && bbox && recintoCod && recintoCod !== "—") {
       try {
-        const fbSup = await fetch(`${OGC_API_BASE}/collections/CT_Superficies/items?bbox=${bbox}&limit=1000`).then(r => r.json());
+        const fbSup = await fetch(`${OGC_API_BASE}/collections/CT_Superficies/items?bbox=${bbox}&limit=3000`).then(r => r.json());
         if (fbSup.features && fbSup.features.length > 0) superficiesFeatures = fbSup.features;
       } catch (_) {}
     }

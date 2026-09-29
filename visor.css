@@ -488,6 +488,26 @@ html, body {
   display: flex;
 }
 
+/* Estilos modernos y elegantes para clústeres de arbolado (en zooms lejanos <= 14) */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-color: rgba(33, 99, 34, 0.38) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background-color: rgba(33, 99, 34, 0.95) !important;
+  color: #ffffff !important;
+  font-family: var(--font-title) !important;
+  font-weight: 700 !important;
+  font-size: 0.72rem !important;
+  border-radius: 9999px !important;
+}
+
 /* ==========================================================================
    Panel Izquierdo (Resumen General, Gestor de Capas y Filtros)
    ========================================================================== */
