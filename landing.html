@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor Cartagena | Work in Progress</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Barra superior protegida -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+        <line x1="8" y1="2" x2="8" y2="18"></line>
+        <line x1="16" y1="6" x2="16" y2="22"></line>
+      </svg>
+      <span>Visor Cartagena</span>
+    </div>
+
+    <div class="topbar-user">
+      <div class="user-badge">
+        <span class="status-dot"></span>
+        <span id="userEmail">Cargando...</span>
+      </div>
+      <button id="logoutBtn" class="btn-secondary" title="Cerrar sesión">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Salir</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="container">
+    <section class="hero-wip">
+      <div class="wip-badge">🚧 En desarrollo / Work in Progress</div>
+      <h1 class="hero-title">Bienvenido al <span>Visor Cartagena</span></h1>
+      <p class="hero-desc">
+        Tu identidad ha sido verificada en la base de datos con éxito. El visor cartográfico y las herramientas interactivas se integrarán en este espacio en la siguiente fase.
+      </p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h2 class="feature-title">Cartografía Base</h2>
+          <p class="feature-text">Capas satelitales, ortofotos y cartografía temática del término de Cartagena.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h2 class="feature-title">Análisis Espacial</h2>
+          <p class="feature-text">Consultas de elementos, delimitación de parcelas e inspección detallada.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h2 class="feature-title">Acceso Protegido</h2>
+          <p class="feature-text">Sesión protegida mediante tokens criptográficos JWT y base de datos Supabase.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { requireAuth, logout } from "./auth.js";
+
+    const userEmailSpan = document.getElementById("userEmail");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // Verificar si el usuario está autenticado; si no, lo envía a index.html
+    async function init() {
+      const session = await requireAuth();
+      if (session && session.user) {
+        userEmailSpan.textContent = session.user.email || "Usuario autenticado";
+      }
+    }
+
+    logoutBtn.addEventListener("click", async () => {
+      await logout();
+    });
+
+    init();
+  </script>
+</body>
+</html>
