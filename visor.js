@@ -764,19 +764,93 @@ function setSaturation(value) {
 }
 
 // ==============================================================================
-// EXPORTACIÓN DE RECINTO A PDF / INFORME TÉCNICO
+// EXPORTACIÓN DE RECINTO A PDF (2 PÁGINAS: DATOS + PLANO A PÁGINA COMPLETA)
 // ==============================================================================
-function exportRecintoPDF(feature) {
+
+function computeFeatureBbox(feature) {
+  if (feature.bbox && feature.bbox.length === 4) {
+    return feature.bbox.join(",");
+  }
+  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+  function processCoords(coords) {
+    if (typeof coords[0] === "number") {
+      const [lng, lat] = coords;
+      if (lng < minLng) minLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lng > maxLng) maxLng = lng;
+      if (lat > maxLat) maxLat = lat;
+    } else {
+      coords.forEach(processCoords);
+    }
+  }
+  if (feature.geometry && feature.geometry.coordinates) {
+    processCoords(feature.geometry.coordinates);
+  }
+  if (minLng === Infinity) return null;
+  return `${minLng.toFixed(6)},${minLat.toFixed(6)},${maxLng.toFixed(6)},${maxLat.toFixed(6)}`;
+}
+
+async function exportRecintoPDF(feature) {
   if (!feature) return;
 
+  // Abrir ventana inmediatamente en el hilo síncrono del click para evitar bloqueo de pop-ups
+  const printWindow = window.open("", "_blank", "width=1250,height=900");
+  if (!printWindow) {
+    alert("Por favor, permita las ventanas emergentes (pop-ups) en su navegador para exportar el documento PDF.");
+    return;
+  }
+
+  // Pantalla temporal de carga estilizada
+  printWindow.document.open();
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <title>Generando Documento Oficial...</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+      <style>
+        body {
+          margin: 0; padding: 0; background: #0b0f17; color: #f8fafc;
+          font-family: 'Inter', system-ui, sans-serif; height: 100vh;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .loading-card {
+          text-align: center; background: rgba(24, 24, 28, 0.9);
+          border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+          padding: 2.5rem 3rem; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        .spinner {
+          width: 38px; height: 38px; border: 3px solid rgba(56, 189, 248, 0.2);
+          border-top-color: #38bdf8; border-radius: 50%;
+          animation: spin 0.8s linear infinite; margin: 0 auto 1.25rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        h2 { font-family: 'Montserrat', sans-serif; font-size: 1.15rem; margin-bottom: 0.4rem; letter-spacing: 0.05em; color: #ffffff; }
+        p { font-size: 0.82rem; color: #94a3b8; margin: 0; }
+      </style>
+    </head>
+    <body>
+      <div class="loading-card">
+        <div class="spinner"></div>
+        <h2>TESELAB CARTAGENA</h2>
+        <p>Consultando inventario y preparando informe técnico oficial (2 páginas)...</p>
+      </div>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+
   const p = feature.properties || {};
-  const recintoNombre = p.NOM_recinto || p.Nombre || p.COD_recinto || `Recinto #${feature.id}`;
-  const recintoCod = p.COD_recinto || p.CODIGO || "—";
+  const recintoCod = p.CODIGO || p.COD_recinto || p.COD_recint || "—";
+  const recintoNombre = p.Nombre || p.NOM_recinto || p.COD_recinto || `Recinto #${feature.id}`;
   const recintoEstado = p.Estado || "—";
-  const recintoSup = p.SUP ? Number(p.SUP).toLocaleString("es-ES") + " m²" : "—";
+  const recintoSupNum = Number(p.SUP) || 0;
+  const recintoSup = recintoSupNum > 0 ? recintoSupNum.toLocaleString("es-ES") + " m²" : "—";
   const recintoZona = p.Zona || "—";
   const recintoNucleo = p.NucleoUrb || "—";
-  const recintoTitularidad = p.TITULARIDA || "—";
+  const recintoTitularidad = p.TITULARIDA || "Municipal";
   const recintoContrato = p.Contrato || "—";
   const fechaGeneracion = new Date().toLocaleDateString("es-ES", {
     year: "numeric",
@@ -786,312 +860,1021 @@ function exportRecintoPDF(feature) {
     minute: "2-digit"
   });
 
-  const printWindow = window.open("", "_blank", "width=1200,height=850");
-  if (!printWindow) {
-    alert("Por favor, permita las ventanas emergentes (pop-ups) en su navegador para exportar el PDF.");
-    return;
+  // Consultar en OGC API los elementos de Arbolado y Superficies contenidos en este recinto
+  const bbox = computeFeatureBbox(feature);
+  let arboladoUrl = `${OGC_API_BASE}/collections/CT_Arbolado_y_palmeras/items?limit=2000`;
+  let superficiesUrl = `${OGC_API_BASE}/collections/CT_Superficies/items?limit=1000`;
+
+  if (recintoCod && recintoCod !== "—") {
+    arboladoUrl += `&COD_recinto=${encodeURIComponent(recintoCod)}`;
+    superficiesUrl += `&COD_recint=${encodeURIComponent(recintoCod)}`;
+  } else if (bbox) {
+    arboladoUrl += `&bbox=${bbox}`;
+    superficiesUrl += `&bbox=${bbox}`;
   }
 
-  const featureJsonString = JSON.stringify(feature);
+  let arboladoFeatures = [];
+  let superficiesFeatures = [];
 
-  const html = `<!DOCTYPE html>
+  try {
+    const [arbRes, supRes] = await Promise.all([
+      fetch(arboladoUrl).then(r => r.ok ? r.json() : { features: [] }).catch(() => ({ features: [] })),
+      fetch(superficiesUrl).then(r => r.ok ? r.json() : { features: [] }).catch(() => ({ features: [] }))
+    ]);
+    arboladoFeatures = arbRes.features || [];
+    superficiesFeatures = supRes.features || [];
+
+    // Fallback a BBOX si por código no devuelve elementos pero existe bbox
+    if (arboladoFeatures.length === 0 && bbox && recintoCod && recintoCod !== "—") {
+      try {
+        const fbArb = await fetch(`${OGC_API_BASE}/collections/CT_Arbolado_y_palmeras/items?bbox=${bbox}&limit=1000`).then(r => r.json());
+        if (fbArb.features && fbArb.features.length > 0) arboladoFeatures = fbArb.features;
+      } catch (_) {}
+    }
+    if (superficiesFeatures.length === 0 && bbox && recintoCod && recintoCod !== "—") {
+      try {
+        const fbSup = await fetch(`${OGC_API_BASE}/collections/CT_Superficies/items?bbox=${bbox}&limit=1000`).then(r => r.json());
+        if (fbSup.features && fbSup.features.length > 0) superficiesFeatures = fbSup.features;
+      } catch (_) {}
+    }
+  } catch (err) {
+    console.error("Error al recopilar elementos para el informe de recinto:", err);
+  }
+
+  // Agregación de Arbolado y Palmeras para la Página 1
+  const speciesMap = {};
+  let countPalmeras = 0;
+  let countArboles = 0;
+  let countSingulares = 0;
+  let countOtrosArb = 0;
+
+  arboladoFeatures.forEach(f => {
+    const ap = f.properties || {};
+    const esp = (ap.Especie && ap.Especie !== "<NULL>") ? ap.Especie.trim() : (ap.Tipo ? ap.Tipo.trim() : "Especie no determinada");
+    const tipo = (ap.Tipo || "").toLowerCase().trim();
+    const tam = ap.Tamano || "—";
+
+    if (tipo === "palmera") countPalmeras++;
+    else if (tipo === "arbol") countArboles++;
+    else if (tipo === "arbol singular") countSingulares++;
+    else countOtrosArb++;
+
+    if (!speciesMap[esp]) {
+      speciesMap[esp] = {
+        nombre: esp,
+        tipo: ap.Tipo || "Árbol",
+        tamano: tam,
+        count: 0
+      };
+    }
+    speciesMap[esp].count++;
+  });
+
+  const speciesList = Object.values(speciesMap).sort((a, b) => b.count - a.count);
+  const totalArbolado = arboladoFeatures.length;
+  const totalEspecies = speciesList.length;
+
+  // Construir filas de la tabla de arbolado (con límite de 5 para evitar desborde en Página 1)
+  let arboladoTableRows = "";
+  if (totalArbolado === 0) {
+    arboladoTableRows = `<tr><td colspan="5" class="empty-cell">No se registran ejemplares de arbolado o palmeras inventariados en este recinto.</td></tr>`;
+  } else {
+    const maxArbRows = 5;
+    const displayedSpecies = speciesList.slice(0, maxArbRows);
+    displayedSpecies.forEach(sp => {
+      const pct = ((sp.count / totalArbolado) * 100).toFixed(1) + "%";
+      arboladoTableRows += `
+        <tr>
+          <td><strong style="color: #0f172a;">${sp.nombre}</strong></td>
+          <td><span class="badge-tag">${sp.tipo}</span></td>
+          <td style="color: #475569;">${sp.tamano}</td>
+          <td class="text-right"><strong>${sp.count}</strong></td>
+          <td class="text-right" style="color: #64748b;">${pct}</td>
+        </tr>
+      `;
+    });
+
+    if (speciesList.length > maxArbRows) {
+      const remainingSpecies = speciesList.slice(maxArbRows);
+      const remainingCount = remainingSpecies.reduce((acc, cur) => acc + cur.count, 0);
+      const pctRest = ((remainingCount / totalArbolado) * 100).toFixed(1) + "%";
+      arboladoTableRows += `
+        <tr class="rest-row">
+          <td colspan="3" style="font-style: italic; color: #64748b;">Otras especies (${remainingSpecies.length} especies adicionales)...</td>
+          <td class="text-right"><strong>${remainingCount}</strong></td>
+          <td class="text-right" style="color: #64748b;">${pctRest}</td>
+        </tr>
+      `;
+    }
+  }
+
+  // Agregación de Superficies para la Página 1
+  const supMap = {};
+  let totalSuperficiesM2 = 0;
+
+  superficiesFeatures.forEach(f => {
+    const sp = f.properties || {};
+    const elem = (sp.Elemento || "otros").toLowerCase().trim();
+    const supVal = Number(sp.SUP) || 0;
+    totalSuperficiesM2 += supVal;
+
+    if (!supMap[elem]) {
+      supMap[elem] = {
+        elemento: elem,
+        count: 0,
+        m2: 0
+      };
+    }
+    supMap[elem].count++;
+    supMap[elem].m2 += supVal;
+  });
+
+  const supList = Object.values(supMap).sort((a, b) => b.m2 - a.m2);
+  const totalSuperficies = superficiesFeatures.length;
+  const superficiesM2Text = totalSuperficiesM2 > 0 ? totalSuperficiesM2.toLocaleString("es-ES") + " m²" : "0 m²";
+  const porcentajeSuperficie = (recintoSupNum > 0 && totalSuperficiesM2 > 0)
+    ? ((totalSuperficiesM2 / recintoSupNum) * 100).toFixed(1)
+    : "—";
+
+  // Mapeo de colores QGIS para superficies
+  const COLOR_SUPERFICIES_MAP = {
+    silvestre: "#7454b4",
+    jardin: "#30de30",
+    cesped: "#70b552",
+    "pavimento duro": "#b2bba1",
+    "pavimento blando": "#f6ec7b",
+    "tierra desnuda": "#eec261",
+    "zona de juegos": "#8be1cc",
+    "zona deportiva": "#5479b4",
+    pergola: "#838383",
+    construccion: "#5e5177",
+    fuente: "#7ecef3",
+    otros: "#888888"
+  };
+
+  // Construir filas de la tabla de superficies
+  let superficiesTableRows = "";
+  if (totalSuperficies === 0) {
+    superficiesTableRows = `<tr><td colspan="4" class="empty-cell">No se registran polígonos de superficie inventariados en este recinto.</td></tr>`;
+  } else {
+    supList.forEach(s => {
+      const color = COLOR_SUPERFICIES_MAP[s.elemento] || "#94a3b8";
+      const pctRecinto = recintoSupNum > 0 ? ((s.m2 / recintoSupNum) * 100).toFixed(1) + "%" : "—";
+      superficiesTableRows += `
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background-color: ${color}; border: 1px solid rgba(0,0,0,0.2);"></span>
+              <strong style="text-transform: capitalize; color: #0f172a;">${s.elemento}</strong>
+            </div>
+          </td>
+          <td class="text-center"><strong>${s.count}</strong></td>
+          <td class="text-right"><strong>${s.m2.toLocaleString("es-ES")} m²</strong></td>
+          <td class="text-right" style="color: #64748b;">${pctRecinto}</td>
+        </tr>
+      `;
+    });
+  }
+
+  // Construcción de la leyenda dinámica para la Página 2
+  let legendSuperficiesItems = "";
+  supList.forEach(s => {
+    const color = COLOR_SUPERFICIES_MAP[s.elemento] || "#94a3b8";
+    legendSuperficiesItems += `
+      <div class="legend-row">
+        <span class="legend-swatch" style="background-color: ${color};"></span>
+        <span class="legend-txt" style="text-transform: capitalize;">${s.elemento}</span>
+      </div>
+    `;
+  });
+
+  let legendArbItems = "";
+  if (countPalmeras > 0) {
+    legendArbItems += `
+      <div class="legend-row">
+        <span class="legend-circle" style="background-color: #7d9e29;"></span>
+        <span class="legend-txt">Palmera (${countPalmeras})</span>
+      </div>
+    `;
+  }
+  if (countArboles > 0) {
+    legendArbItems += `
+      <div class="legend-row">
+        <span class="legend-circle" style="background-color: #216322;"></span>
+        <span class="legend-txt">Árbol (${countArboles})</span>
+      </div>
+    `;
+  }
+  if (countSingulares > 0) {
+    legendArbItems += `
+      <div class="legend-row">
+        <span class="legend-circle" style="background-color: #5a6e44; border-color: #f59e0b;"></span>
+        <span class="legend-txt">Árbol Singular (${countSingulares})</span>
+      </div>
+    `;
+  }
+  if (countOtrosArb > 0) {
+    legendArbItems += `
+      <div class="legend-row">
+        <span class="legend-circle" style="background-color: #b7484b;"></span>
+        <span class="legend-txt">Alcorque / Marra (${countOtrosArb})</span>
+      </div>
+    `;
+  }
+
+  const featureJson = JSON.stringify(feature);
+  const superficiesJson = JSON.stringify({ type: "FeatureCollection", features: superficiesFeatures });
+  const arboladoJson = JSON.stringify({ type: "FeatureCollection", features: arboladoFeatures });
+
+  const documentHtml = `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>TESELAB - Ficha Técnica: ${recintoNombre}</title>
+  <title>TESELAB Cartagena - Ficha Técnica: ${recintoNombre} (${recintoCod})</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      color: #1e293b;
-      background: #f8fafc;
-      padding: 1.5rem;
+      color: #0f172a;
       -webkit-font-smoothing: antialiased;
     }
-    .print-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-    }
-    .btn-action {
+
+    /* Barra Superior para pantalla (oculta en PDF) */
+    .screen-toolbar {
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
       background: #0f172a;
       color: #ffffff;
-      border: none;
-      padding: 0.6rem 1.2rem;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .btn-action.secondary {
-      background: #e2e8f0;
-      color: #334155;
-    }
-    .report-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    }
-    .report-header {
-      background: #0f172a;
-      color: #ffffff;
-      padding: 1.25rem 1.75rem;
+      padding: 0.75rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      z-index: 9999;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
-    .report-brand {
+    .toolbar-info {
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .toolbar-badge {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.72rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+    }
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .btn-tool {
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s;
+    }
+    .btn-tool.primary {
+      background: #0284c7;
+      color: #ffffff;
+    }
+    .btn-tool.primary:hover {
+      background: #0369a1;
+    }
+    .btn-tool.secondary {
+      background: rgba(255,255,255,0.12);
+      color: #f1f5f9;
+    }
+    .btn-tool.secondary:hover {
+      background: rgba(255,255,255,0.22);
+    }
+
+    /* Estructura A4 de las dos páginas */
+    @media screen {
+      body {
+        background: #1e293b;
+        padding-bottom: 3rem;
+      }
+      .page-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+        margin-top: 1.5rem;
+      }
+      .print-page {
+        width: 210mm;
+        height: 297mm;
+        background: #ffffff;
+        box-shadow: 0 10px 35px rgba(0,0,0,0.5);
+        border-radius: 6px;
+        padding: 10mm 12mm;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm 10mm;
+      }
+      html, body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .screen-toolbar {
+        display: none !important;
+      }
+      .page-container {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .print-page {
+        width: 100% !important;
+        height: 275mm !important;
+        max-height: 275mm !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        overflow: hidden !important;
+      }
+      .page-1 {
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+      .page-2 {
+        page-break-before: always !important;
+        break-before: page !important;
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+      .print-tile-pane {
+        filter: saturate(30%) !important;
+      }
+    }
+
+    /* Encabezados y Secciones */
+    .page-header {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 10px 14px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .brand-title {
       font-family: 'Montserrat', sans-serif;
       font-size: 1.15rem;
       font-weight: 800;
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
-    .report-brand span { color: #38bdf8; }
-    .report-subtitle {
-      font-size: 0.8rem;
+    .brand-accent {
+      color: #38bdf8;
+    }
+    .brand-sub {
+      font-size: 0.65rem;
       color: #94a3b8;
-      margin-top: 0.15rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-top: 2px;
     }
-    .report-date {
-      text-align: right;
-      font-size: 0.75rem;
-      color: #94a3b8;
-    }
-    .report-body {
-      padding: 1.5rem 1.75rem;
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 1.5rem;
-    }
-    .map-container-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .map-title {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.82rem;
+    .doc-badge {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
       font-weight: 700;
-      color: #0f172a;
+      font-size: 0.68rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      text-align: right;
+    }
+    .doc-date {
+      font-size: 0.65rem;
+      color: #94a3b8;
+      margin-top: 2px;
+      text-align: right;
+    }
+
+    .section-wrap {
+      margin-bottom: 9px;
+    }
+    .section-header-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.76rem;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+      color: #0f172a;
+      border-bottom: 1.5px solid #cbd5e1;
+      padding-bottom: 3px;
+      margin-bottom: 6px;
+    }
+
+    /* Grid de Datos del Recinto */
+    .recinto-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .meta-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 5px 8px;
+    }
+    .meta-box.span-2 {
+      grid-column: span 2;
+    }
+    .meta-box.span-4 {
+      grid-column: span 4;
+    }
+    .meta-lbl {
+      font-size: 0.62rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+    }
+    .meta-val {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 1px;
+      word-break: break-word;
+    }
+    .meta-val.code {
+      color: #0284c7;
+    }
+    .meta-val.highlight {
+      color: #059669;
+    }
+
+    /* KPIs de Resumen */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .kpi-card {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      padding: 6px 10px;
+      text-align: center;
+    }
+    .kpi-val {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.1;
+    }
+    .kpi-card.trees .kpi-val { color: #059669; }
+    .kpi-card.surfaces .kpi-val { color: #d97706; }
+    .kpi-card.ratio .kpi-val { color: #0284c7; }
+    .kpi-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #334155;
+      margin-top: 2px;
+    }
+    .kpi-sub {
+      font-size: 0.58rem;
+      color: #64748b;
+    }
+
+    /* Tablas de Inventario */
+    .inventory-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.7rem;
+    }
+    .inventory-table th {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-size: 0.62rem;
+      padding: 4px 6px;
+      border: 1px solid #cbd5e1;
+      text-align: left;
+    }
+    .inventory-table td {
+      padding: 4px 6px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+    }
+    .inventory-table tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+    .badge-tag {
+      background: #e2e8f0;
+      color: #1e293b;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .empty-cell {
+      text-align: center;
+      padding: 10px !important;
+      color: #94a3b8;
+      font-style: italic;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+
+    /* Footer de Página */
+    .page-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.64rem;
+      color: #64748b;
+    }
+
+    /* PÁGINA 2: MAPA A PÁGINA COMPLETA */
+    .map-page-wrapper {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 238mm;
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1.5px solid #cbd5e1;
     }
     #printMap {
       width: 100%;
-      height: 380px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      overflow: hidden;
+      height: 100%;
+      min-height: 238mm;
+      background: #121212;
     }
     .print-tile-pane {
       filter: saturate(30%);
     }
-    .info-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .section-heading {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: #0f172a;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 0.4rem;
-    }
-    .attr-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
-    }
-    .attr-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+
+    /* Leyenda Cartográfica Flotante en Página 2 */
+    .map-floating-legend {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 6px;
-      padding: 0.65rem 0.85rem;
+      padding: 8px 12px;
+      color: #ffffff;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      max-width: 280px;
     }
-    .attr-label {
-      font-size: 0.68rem;
+    .legend-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 800;
       text-transform: uppercase;
-      color: #64748b;
-      font-weight: 600;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.05em;
+      color: #38bdf8;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      padding-bottom: 3px;
+      margin-bottom: 5px;
     }
-    .attr-value {
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin-top: 0.2rem;
-    }
-    .attr-box.full-width {
-      grid-column: span 2;
-    }
-    .report-footer {
-      background: #f1f5f9;
-      padding: 0.85rem 1.75rem;
-      border-top: 1px solid #e2e8f0;
+    .legend-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 0.72rem;
-      color: #64748b;
+      gap: 7px;
+      margin-bottom: 3px;
     }
-    @media print {
-      body {
-        background: #ffffff;
-        padding: 0;
-      }
-      .print-actions {
-        display: none !important;
-      }
-      .report-card {
-        border: none;
-        box-shadow: none;
-        border-radius: 0;
-      }
-      @page {
-        size: A4 landscape;
-        margin: 10mm;
-      }
-      #printMap {
-        height: 380px;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      .print-tile-pane {
-        filter: saturate(30%) !important;
-      }
+    .legend-row:last-child {
+      margin-bottom: 0;
+    }
+    .legend-line {
+      display: inline-block;
+      width: 16px;
+      height: 3px;
+      background-color: #0284c7;
+      border-radius: 1px;
+    }
+    .legend-swatch {
+      display: inline-block;
+      width: 12px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .legend-circle {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 1.5px solid #ffffff;
+    }
+    .legend-txt {
+      font-size: 0.65rem;
+      color: #f1f5f9;
+      font-weight: 500;
+    }
+
+    /* Norte Cartográfico */
+    .north-arrow-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 5px 8px;
+      color: #ffffff;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    .north-arrow-symbol {
+      font-size: 0.85rem;
+      line-height: 1;
+      color: #38bdf8;
+    }
+    .north-arrow-text {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 800;
+      margin-top: 1px;
     }
   </style>
 </head>
 <body>
-  <div class="print-actions">
-    <button class="btn-action secondary" onclick="window.close()">Cerrar</button>
-    <button class="btn-action" onclick="window.print()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-      <span>Imprimir / Guardar como PDF</span>
-    </button>
+  <!-- Barra de Herramientas de Pantalla -->
+  <div class="screen-toolbar no-print">
+    <div class="toolbar-info">
+      <span class="toolbar-badge">INFORME OFICIAL</span>
+      <span><strong>${recintoNombre}</strong> (${recintoCod}) &bull; Documento de 2 Páginas</span>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn-tool secondary" onclick="window.close()">Cerrar</button>
+      <button class="btn-tool primary" onclick="window.print()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        <span>Imprimir / Guardar como PDF (2 Páginas)</span>
+      </button>
+    </div>
   </div>
 
-  <div class="report-card">
-    <header class="report-header">
+  <div class="page-container">
+    <!-- ======================================================================= -->
+    <!-- PÁGINA 1: DATOS GENERALES DEL RECINTO Y TODOS LOS ELEMENTOS CONTENIDOS -->
+    <!-- ======================================================================= -->
+    <section class="print-page page-1">
       <div>
-        <div class="report-brand">TESELAB <span>CARTAGENA</span></div>
-        <div class="report-subtitle">Ficha Técnica Oficial de Recinto Cartográfico</div>
-      </div>
-      <div class="report-date">
-        <div>Fecha de emisión:</div>
-        <strong>${fechaGeneracion}</strong>
-      </div>
-    </header>
+        <header class="page-header">
+          <div>
+            <div class="brand-title">TESELAB <span class="brand-accent">CARTAGENA</span></div>
+            <div class="brand-sub">TESELA GESTIÓN CULTURAL Y PATRIMONIO S.L. &bull; INVENTARIO DE INFRAESTRUCTURA VERDE</div>
+          </div>
+          <div>
+            <div class="doc-badge">FICHA TÉCNICA OFICIAL</div>
+            <div class="doc-date">Emisión: ${fechaGeneracion}</div>
+          </div>
+        </header>
 
-    <div class="report-body">
-      <div class="map-container-wrap">
-        <h4 class="map-title">Delimitación Espacial (Google Satélite 30% Sat.)</h4>
-        <div id="printMap"></div>
-      </div>
+        <!-- Bloque 1: Identificación y Datos Generales del Recinto -->
+        <div class="section-wrap">
+          <div class="section-header-title">1. Identificación y Datos Generales del Recinto</div>
+          <div class="recinto-meta-grid">
+            <div class="meta-box span-2">
+              <div class="meta-lbl">Nombre / Denominación Oficial</div>
+              <div class="meta-val">${recintoNombre}</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-lbl">Código Oficial</div>
+              <div class="meta-val code">${recintoCod}</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-lbl">Estado / Clasificación</div>
+              <div class="meta-val">${recintoEstado}</div>
+            </div>
 
-      <div class="info-container">
-        <h4 class="section-heading">Atributos e Información del Recinto</h4>
-        <div class="attr-grid">
-          <div class="attr-box full-width">
-            <div class="attr-label">Nombre del Recinto</div>
-            <div class="attr-value">${recintoNombre}</div>
-          </div>
-          <div class="attr-box">
-            <div class="attr-label">Código Oficial</div>
-            <div class="attr-value">${recintoCod}</div>
-          </div>
-          <div class="attr-box">
-            <div class="attr-label">Estado / Uso</div>
-            <div class="attr-value">${recintoEstado}</div>
-          </div>
-          <div class="attr-box">
-            <div class="attr-label">Superficie Total</div>
-            <div class="attr-value">${recintoSup}</div>
-          </div>
-          <div class="attr-box">
-            <div class="attr-label">Zona Territorial</div>
-            <div class="attr-value">${recintoZona}</div>
-          </div>
-          <div class="attr-box">
-            <div class="attr-label">Núcleo Urbano</div>
-            <div class="attr-value">${recintoNucleo}</div>
-          </div>
-          <div class="attr-box">
-            <div class="attr-label">Titularidad</div>
-            <div class="attr-value">${recintoTitularidad}</div>
-          </div>
-          <div class="attr-box full-width">
-            <div class="attr-label">Contrato / Lote Asignado</div>
-            <div class="attr-value">${recintoContrato}</div>
+            <div class="meta-box">
+              <div class="meta-lbl">Superficie Total Registrada</div>
+              <div class="meta-val highlight">${recintoSup}</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-lbl">Zona Territorial</div>
+              <div class="meta-val">${recintoZona}</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-lbl">Núcleo Urbano</div>
+              <div class="meta-val">${recintoNucleo}</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-lbl">Titularidad</div>
+              <div class="meta-val">${recintoTitularidad}</div>
+            </div>
+
+            <div class="meta-box span-4">
+              <div class="meta-lbl">Contrato / Lote Asignado</div>
+              <div class="meta-val">${recintoContrato}</div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <footer class="report-footer">
-      <div>Tesela Gestión Cultural y Patrimonio S.L. &bull; www.teselaestudio.es</div>
-      <div>Fuente de datos: OGC API Features &bull; Mergin Maps</div>
-    </footer>
+        <!-- Bloque 2: Resumen Cuantitativo de Elementos Contenidos -->
+        <div class="section-wrap">
+          <div class="section-header-title">2. Resumen Cuantitativo de Elementos Contenidos</div>
+          <div class="kpi-grid">
+            <div class="kpi-card trees">
+              <div class="kpi-val">${totalArbolado}</div>
+              <div class="kpi-label">Arbolado y Palmeras</div>
+              <div class="kpi-sub">${totalEspecies} especies botánicas inventariadas</div>
+            </div>
+            <div class="kpi-card surfaces">
+              <div class="kpi-val">${superficiesM2Text}</div>
+              <div class="kpi-label">Superficie Delimitada</div>
+              <div class="kpi-sub">${totalSuperficies} zonas poligonales clasificadas</div>
+            </div>
+            <div class="kpi-card ratio">
+              <div class="kpi-val">${porcentajeSuperficie}%</div>
+              <div class="kpi-label">Cobertura de Superficies</div>
+              <div class="kpi-sub">Respecto al área total del recinto</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bloque 3: Inventario de Vegetación: Arbolado y Palmeras -->
+        <div class="section-wrap">
+          <div class="section-header-title">3. Inventario de Vegetación: Arbolado y Palmeras Contenidas</div>
+          <table class="inventory-table">
+            <thead>
+              <tr>
+                <th>Especie Botánica</th>
+                <th>Tipo</th>
+                <th>Tamaño Predominante</th>
+                <th class="text-right">Ejemplares</th>
+                <th class="text-right">% Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${arboladoTableRows}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Bloque 4: Inventario de Superficies por Tipología -->
+        <div class="section-wrap">
+          <div class="section-header-title">4. Inventario de Superficies Contenidas por Tipología</div>
+          <table class="inventory-table">
+            <thead>
+              <tr>
+                <th>Elemento de Superficie</th>
+                <th class="text-center">Polígonos</th>
+                <th class="text-right">Superficie (m²)</th>
+                <th class="text-right">% Recinto</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${superficiesTableRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <footer class="page-footer">
+        <div>TESELAB Cartagena &bull; TESELA Gestión Cultural y Patrimonio S.L. &bull; www.teselaestudio.es</div>
+        <div>Página 1 de 2</div>
+      </footer>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PÁGINA 2: PLANO CARTOGRÁFICO A PÁGINA COMPLETA CON ELEMENTOS DIBUJADOS  -->
+    <!-- ======================================================================= -->
+    <section class="print-page page-2">
+      <header class="page-header" style="margin-bottom: 6px; padding: 7px 12px;">
+        <div>
+          <div class="brand-title" style="font-size: 0.95rem;">TESELAB <span class="brand-accent">CARTAGENA</span> &bull; <span style="font-size: 0.8rem; font-weight: 600;">PLANO CARTOGRÁFICO DE RECINTO</span></div>
+        </div>
+        <div style="font-size: 0.72rem; color: #cbd5e1; text-align: right;">
+          <strong>${recintoNombre}</strong> (${recintoCod}) &bull; ${recintoSup}
+        </div>
+      </header>
+
+      <div class="map-page-wrapper">
+        <div id="printMap"></div>
+
+        <!-- Leyenda Cartográfica Flotante -->
+        <div class="map-floating-legend">
+          <div class="legend-title">Leyenda Cartográfica</div>
+          <div class="legend-row">
+            <span class="legend-line"></span>
+            <span class="legend-txt">Perímetro del Recinto (${recintoCod})</span>
+          </div>
+          ${legendSuperficiesItems}
+          ${legendArbItems}
+        </div>
+
+        <!-- Flecha Norte -->
+        <div class="north-arrow-badge">
+          <div class="north-arrow-symbol">▲</div>
+          <div class="north-arrow-text">N</div>
+        </div>
+      </div>
+
+      <footer class="page-footer" style="margin-top: 6px;">
+        <div>Fondo: Ortofoto Google Satélite (30% Saturación) &bull; OGC API Features &bull; Mergin Maps</div>
+        <div>Página 2 de 2</div>
+      </footer>
+    </section>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const featureData = ${featureJsonString};
+    const recintoData = ${featureJson};
+    const superficiesData = ${superficiesJson};
+    const arboladoData = ${arboladoJson};
+
     const map = L.map('printMap', {
       zoomControl: false,
       attributionControl: false
     });
 
+    // Fondo Satélite con saturación al 30%
     const satLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-      maxZoom: 20,
+      maxZoom: 21,
       className: 'print-tile-pane'
     }).addTo(map);
 
-    const geoLayer = L.geoJSON(featureData, {
+    // Paneles para apilamiento exacto
+    map.createPane('recintosPane');
+    map.getPane('recintosPane').style.zIndex = 410;
+
+    map.createPane('superficiesPane');
+    map.getPane('superficiesPane').style.zIndex = 420;
+
+    map.createPane('arboladoPane');
+    map.getPane('arboladoPane').style.zIndex = 430;
+
+    // 1. Recinto (Límite perimetral)
+    const recintoLayer = L.geoJSON(recintoData, {
+      pane: 'recintosPane',
       style: {
         color: '#0284c7',
         weight: 3.5,
-        fillColor: '#38bdf8',
-        fillOpacity: 0.45
+        fillColor: 'rgba(2, 132, 199, 0.08)',
+        fillOpacity: 1,
+        dashArray: '5, 5'
       }
     }).addTo(map);
 
-    const bounds = geoLayer.getBounds();
-    map.fitBounds(bounds, { padding: [35, 35] });
+    // 2. Superficies (con colores exactos de QGIS)
+    const COLOR_SUPERFICIES_MAP = {
+      silvestre: 'rgba(116, 84, 180, 0.85)',
+      jardin: 'rgba(48, 222, 48, 0.70)',
+      cesped: 'rgba(112, 181, 82, 0.75)',
+      'pavimento duro': 'rgba(178, 187, 161, 0.75)',
+      'pavimento blando': 'rgba(246, 236, 123, 0.75)',
+      'tierra desnuda': 'rgba(238, 194, 97, 0.75)',
+      'zona de juegos': 'rgba(139, 225, 204, 0.75)',
+      'zona deportiva': 'rgba(84, 121, 180, 0.75)',
+      pergola: 'rgba(131, 131, 131, 0.85)',
+      construccion: 'rgba(94, 81, 119, 0.85)',
+      fuente: 'rgba(126, 206, 243, 0.85)',
+      otros: 'rgba(136, 136, 136, 0.75)'
+    };
 
-    let printed = false;
-    function triggerPrint() {
-      if (!printed) {
-        printed = true;
-        setTimeout(() => {
-          window.print();
-        }, 600);
-      }
+    if (superficiesData.features && superficiesData.features.length > 0) {
+      L.geoJSON(superficiesData, {
+        pane: 'superficiesPane',
+        style: function(f) {
+          const elem = (f.properties?.Elemento || 'otros').toLowerCase().trim();
+          return {
+            fillColor: COLOR_SUPERFICIES_MAP[elem] || 'rgba(167, 167, 167, 0.7)',
+            fillOpacity: 0.85,
+            color: '#0f172a',
+            weight: 1.2,
+            opacity: 1
+          };
+        }
+      }).addTo(map);
     }
 
-    satLayer.on('load', triggerPrint);
-    setTimeout(triggerPrint, 1500);
+    // 3. Arbolado y Palmeras (con simbología exacta de QGIS)
+    if (arboladoData.features && arboladoData.features.length > 0) {
+      arboladoData.features.forEach(f => {
+        if (f.geometry && f.geometry.type === 'Point') {
+          const [lng, lat] = f.geometry.coordinates;
+          const p = f.properties || {};
+          const tipo = (p.Tipo || '').toLowerCase().trim();
+          const tamano = (p.Tamano || '').trim();
+
+          let radius = 5.5;
+          let fillColor = '#216322';
+          let strokeColor = '#ffffff';
+          let weight = 1.2;
+
+          if (tipo === 'palmera') {
+            fillColor = '#7d9e29';
+            if (tamano === 'Mas de 6 m') radius = 8;
+            else if (tamano === 'De 3 a 6 m') radius = 6;
+            else radius = 4.5;
+          } else if (tipo === 'arbol') {
+            fillColor = '#216322';
+            if (tamano === 'Mas de 6 m') radius = 8.5;
+            else if (tamano === 'De 3 a 6 m') radius = 6;
+            else radius = 4.5;
+          } else if (tipo === 'arbol singular') {
+            fillColor = '#5a6e44';
+            radius = 10;
+            strokeColor = '#f59e0b';
+            weight = 2;
+          } else if (tipo === 'm' || tipo === 'mr') {
+            fillColor = '#7b5c2a';
+            radius = 4;
+          } else if (tipo === 't' || tipo === 'tr') {
+            fillColor = '#312a1e';
+            radius = 3.5;
+          } else if (tipo === 'a' || tipo === 'ar') {
+            fillColor = 'rgba(183, 72, 75, 0.2)';
+            strokeColor = '#b7484b';
+            weight = 1.5;
+            radius = 4;
+          }
+
+          L.circleMarker([lat, lng], {
+            pane: 'arboladoPane',
+            radius: radius,
+            fillColor: fillColor,
+            color: strokeColor,
+            weight: weight,
+            opacity: 1,
+            fillOpacity: 0.95
+          }).addTo(map);
+        }
+      });
+    }
+
+    // Ajuste de cámara centrado en el recinto
+    const bounds = recintoLayer.getBounds();
+    map.fitBounds(bounds, { padding: [40, 40] });
+
+    let printTriggered = false;
+    function doPrint() {
+      if (printTriggered) return;
+      printTriggered = true;
+      setTimeout(() => {
+        map.invalidateSize();
+        map.fitBounds(bounds, { padding: [40, 40] });
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      }, 300);
+    }
+
+    satLayer.on('load', doPrint);
+    setTimeout(doPrint, 1800);
   </script>
 </body>
 </html>`;
 
   printWindow.document.open();
-  printWindow.document.write(html);
+  printWindow.document.write(documentHtml);
   printWindow.document.close();
 }
 
