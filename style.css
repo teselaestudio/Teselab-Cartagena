@@ -1,24 +1,18 @@
 :root {
   --bg-deep: #07080a;
-  --glass-surface: rgba(22, 24, 29, 0.58);
-  --glass-surface-elevated: rgba(30, 34, 42, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-focus: rgba(255, 255, 255, 0.35);
-  --glass-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.22);
-  --glass-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.8), 0 0 1px rgba(255, 255, 255, 0.15);
+  --glass-surface: rgba(18, 20, 26, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.13);
+  --glass-border-focus: rgba(255, 255, 255, 0.4);
+  --glass-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  --glass-shadow: 0 40px 90px -15px rgba(0, 0, 0, 0.85), 0 0 1px rgba(255, 255, 255, 0.2);
   
   --text-main: #f3f4f6;
   --text-muted: #9ca3af;
   --text-dim: #6b7280;
 
-  --accent-chrome: linear-gradient(135deg, #ffffff 0%, #cbd5e1 45%, #64748b 80%, #94a3b8 100%);
   --accent-blue: #38bdf8;
-  --btn-glass: rgba(255, 255, 255, 0.08);
-  --btn-glass-hover: rgba(255, 255, 255, 0.16);
-
   --radius-window: 24px;
   --radius-sm: 10px;
-  --radius-badge: 6px;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", sans-serif;
 }
@@ -44,112 +38,43 @@ body {
 }
 
 /* ==========================================================================
-   Fondo Escénico 3D: Anillos Cromados y Esferas Metálicas
+   Fondo Paisaje Abstracto Pixelado (Nothing dot-matrix style) con Degradado
    ========================================================================== */
 .background-stage {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  overflow: hidden;
-  background: radial-gradient(circle at 50% 50%, #111318 0%, #050608 100%);
-}
-
-/* Anillo metálico cromado 3D (Torus de la referencia) */
-.chrome-torus {
-  position: absolute;
-  width: 580px;
-  height: 580px;
-  border-radius: 50%;
-  border: 75px solid transparent;
-  background: linear-gradient(135deg, 
-    #1e293b 0%, 
-    #94a3b8 18%, 
-    #ffffff 28%, 
-    #334155 45%, 
-    #f8fafc 68%, 
-    #0f172a 82%, 
-    #64748b 100%
-  ) border-box;
-  mask: radial-gradient(farthest-side, transparent calc(100% - 75px), #fff calc(100% - 74px));
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 75px), #fff calc(100% - 74px));
-  top: 48%;
-  left: 54%;
-  transform: translate(-30%, -35%) rotate(-25deg);
-  filter: drop-shadow(0 25px 45px rgba(0, 0, 0, 0.9)) blur(0.5px);
-  opacity: 0.9;
-  animation: torusFloat 20s ease-in-out infinite alternate;
-}
-
-/* Esferas metálicas flotantes */
-.chrome-sphere {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, 
-    #ffffff 0%, 
-    #cbd5e1 22%, 
-    #475569 55%, 
-    #090d16 85%, 
-    #1e293b 100%
-  );
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), inset 0 -4px 10px rgba(0, 0, 0, 0.6);
-}
-
-.sphere-1 {
-  width: 130px;
-  height: 130px;
-  top: 18%;
-  left: 22%;
-  animation: sphereFloat 14s ease-in-out infinite alternate;
-}
-
-.sphere-2 {
-  width: 75px;
-  height: 75px;
-  bottom: 22%;
-  right: 18%;
-  animation: sphereFloat 18s ease-in-out infinite alternate-reverse;
-}
-
-.sphere-3 {
-  width: 48px;
-  height: 48px;
-  top: 32%;
-  right: 28%;
-}
-
-@keyframes torusFloat {
-  0% { transform: translate(-30%, -35%) rotate(-25deg); }
-  100% { transform: translate(-28%, -32%) rotate(-18deg); }
-}
-
-@keyframes sphereFloat {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-24px); }
+  background-image: 
+    radial-gradient(ellipse at 50% 45%, rgba(35, 45, 65, 0.5) 0%, rgba(7, 8, 10, 0.82) 65%, #050608 100%),
+    url("recursos/fondo-nothing.png");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
 /* ==========================================================================
-   Contenedor Ventana de Vidrio (Glass Window Mockup)
+   Ventana / Tarjeta de Vidrio Esmerilado Centrada
    ========================================================================== */
 .glass-window {
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 960px;
-  min-height: 560px;
+  max-width: 480px;
   background: var(--glass-surface);
-  backdrop-filter: blur(36px) saturate(170%);
-  -webkit-backdrop-filter: blur(36px) saturate(170%);
+  backdrop-filter: blur(34px) saturate(180%);
+  -webkit-backdrop-filter: blur(34px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-window);
   box-shadow: var(--glass-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: border-color 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Brillo especular superior del vidrio */
+/* Brillo especular superior del cristal */
 .glass-window::before {
   content: "";
   position: absolute;
@@ -159,9 +84,9 @@ body {
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.35) 0%,
-    rgba(255, 255, 255, 0.08) 35%,
-    rgba(255, 255, 255, 0.02) 60%,
-    rgba(255, 255, 255, 0.12) 100%
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.02) 70%,
+    rgba(255, 255, 255, 0.15) 100%
   );
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -170,198 +95,124 @@ body {
   pointer-events: none;
 }
 
-/* ==========================================================================
-   Barra Superior de la Ventana (macOS Dots + Dirección)
-   ========================================================================== */
+/* Barra superior minimalista y centrada */
 .window-header {
-  height: 48px;
-  display: grid;
-  grid-template-columns: 80px 1fr 80px;
+  height: 46px;
+  display: flex;
   align-items: center;
-  padding: 0 1.25rem;
+  justify-content: space-between;
+  padding: 0 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.02);
 }
 
-.window-dots {
-  display: flex;
-  gap: 7px;
-}
-
-.dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.dot-red { background: #ff5f56; box-shadow: 0 0 6px rgba(255, 95, 86, 0.4); }
-.dot-yellow { background: #ffbd2e; box-shadow: 0 0 6px rgba(255, 189, 46, 0.4); }
-.dot-green { background: #27c93f; box-shadow: 0 0 6px rgba(39, 201, 63, 0.4); }
-
 .window-address {
-  text-align: center;
   font-size: 0.78rem;
   color: var(--text-dim);
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   user-select: none;
 }
 
-.window-nav {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1.25rem;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  color: var(--text-dim);
+/* Icono web que redirecciona a www.teselaestudio.es */
+.web-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.45);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.web-link-icon:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.1);
 }
 
 /* ==========================================================================
-   Cuerpo Interior: Doble Columna (Login & Branding)
+   Cuerpo Centrado de la Tarjeta
    ========================================================================== */
-.window-body {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  padding: 3.5rem 3rem 2.5rem 3rem;
-  gap: 2.5rem;
-  align-items: center;
-  position: relative;
-}
-
-/* Columna Izquierda: Identidad y Tipografía de Impacto */
-.hero-column {
+.window-body-centered {
+  padding: 2.75rem 2.5rem 2.25rem 2.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
+  align-items: center;
+  text-align: center;
 }
 
-.hero-main {
-  margin-top: 1rem;
-}
-
-.glass-headline {
-  font-size: 3.2rem;
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
-}
-
-.glass-headline span {
-  display: block;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-}
-
-.glass-subheadline {
-  font-size: 2.4rem;
-  font-weight: 300;
-  letter-spacing: -0.03em;
-  color: rgba(255, 255, 255, 0.85);
+/* Logotipo de Tesela Estudio GRANDE */
+.brand-logo-container {
   margin-bottom: 1.5rem;
-}
-
-.hero-description {
-  font-size: 0.95rem;
-  color: var(--text-muted);
-  max-width: 380px;
-  line-height: 1.55;
-  margin-bottom: 2rem;
-}
-
-/* Micro-Badges estilo Mockup (4K, PSD, TESELAB) */
-.hero-badges {
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: auto;
 }
 
-.mini-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.55rem;
-  border-radius: var(--radius-badge);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
+.brand-logo {
+  max-width: 220px;
+  height: auto;
+  max-height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  transition: transform 0.2s ease;
 }
 
-.badge-text {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  margin-left: 0.25rem;
-}
-
-/* Columna Derecha: Tarjeta de Acceso Flotante */
-.auth-column {
-  background: rgba(14, 16, 20, 0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 18px;
-  padding: 2.25rem 2rem;
-  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6), var(--glass-highlight);
-}
-
-.auth-header {
-  margin-bottom: 1.75rem;
+.brand-logo:hover {
+  transform: scale(1.03);
 }
 
 .auth-title {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
 }
 
 .auth-subtitle {
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   color: var(--text-muted);
-  margin-top: 0.25rem;
+  margin-bottom: 2rem;
 }
 
-/* Campos de Formulario Esmerilados */
+/* Formulario */
+.auth-form {
+  width: 100%;
+  text-align: left;
+}
+
 .form-group {
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-label {
   display: block;
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-size: 0.76rem;
+  font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.45rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.5rem;
 }
 
 .form-input {
   width: 100%;
-  padding: 0.8rem 1rem;
+  padding: 0.85rem 1rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
   color: #ffffff;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   outline: none;
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
 }
 
 .form-input:focus {
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.38);
   background: rgba(255, 255, 255, 0.07);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
@@ -373,12 +224,12 @@ body {
 /* Botón Esmerilado Luminoso */
 .btn-glass-primary {
   width: 100%;
-  padding: 0.85rem 1.25rem;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.06) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.9rem 1.25rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--radius-sm);
   color: #ffffff;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -387,15 +238,15 @@ body {
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
-  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   margin-top: 1.5rem;
 }
 
 .btn-glass-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.1) 100%);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-color: rgba(255, 255, 255, 0.4);
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .btn-glass-primary:active:not(:disabled) {
@@ -407,14 +258,16 @@ body {
   cursor: not-allowed;
 }
 
-/* Mensajes y Alertas */
+/* Alertas */
 .alert {
+  width: 100%;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.25rem;
   display: none;
   border: 1px solid;
+  text-align: left;
 }
 
 .alert-error {
@@ -431,30 +284,20 @@ body {
   color: #fcd34d;
 }
 
-.auth-help {
-  margin-top: 1.25rem;
-  text-align: center;
+.auth-footer {
+  margin-top: 1.75rem;
   font-size: 0.78rem;
   color: var(--text-dim);
 }
 
-/* Footer de iconos sutiles */
-.window-footer-icons {
-  position: absolute;
-  bottom: 2rem;
-  right: 3rem;
-  display: flex;
-  gap: 1rem;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.window-footer-icons svg {
+.auth-footer a {
+  color: var(--text-muted);
+  text-decoration: underline;
   transition: color 0.2s;
-  cursor: pointer;
 }
 
-.window-footer-icons svg:hover {
-  color: rgba(255, 255, 255, 0.8);
+.auth-footer a:hover {
+  color: #ffffff;
 }
 
 /* Spinner */
@@ -472,26 +315,26 @@ body {
 }
 
 /* ==========================================================================
-   Estilos específicos para Landing Page (WIP) en Glassmorphism
+   Landing Page (Work in Progress) en el mismo estilo
    ========================================================================== */
-.landing-body {
-  padding: 3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.glass-window-wide {
+  max-width: 860px;
 }
 
-.landing-hero {
+.landing-body {
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  max-width: 650px;
-  margin: 0 auto;
+  gap: 2rem;
 }
 
 .wip-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0.8rem;
+  padding: 0.35rem 0.9rem;
   border-radius: 9999px;
   background: rgba(245, 158, 11, 0.12);
   border: 1px solid rgba(245, 158, 11, 0.25);
@@ -500,20 +343,21 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .landing-title {
-  font-size: 2.5rem;
+  font-size: 2.3rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #ffffff;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
 }
 
 .landing-subtitle {
-  font-size: 1rem;
+  font-size: 0.96rem;
   color: var(--text-muted);
+  max-width: 600px;
   line-height: 1.6;
 }
 
@@ -521,14 +365,15 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
-  margin-top: 1rem;
+  width: 100%;
+  text-align: left;
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 1.75rem;
+  padding: 1.5rem;
   transition: all 0.25s ease;
   backdrop-filter: blur(12px);
 }
@@ -540,30 +385,50 @@ body {
 }
 
 .card-icon {
-  font-size: 1.5rem;
-  margin-bottom: 0.75rem;
+  font-size: 1.4rem;
+  margin-bottom: 0.6rem;
 }
 
 .card-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
 }
 
 .card-text {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.45;
+}
+
+.user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.user-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #27c93f;
+  box-shadow: 0 0 6px rgba(39, 201, 63, 0.6);
 }
 
 .btn-secondary-glass {
-  padding: 0.45rem 0.9rem;
+  padding: 0.4rem 0.85rem;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-sm);
   color: #ffffff;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
@@ -578,51 +443,15 @@ body {
   border-color: rgba(255, 255, 255, 0.25);
 }
 
-.user-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.35rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.user-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: #27c93f;
-  box-shadow: 0 0 6px rgba(39, 201, 63, 0.6);
-}
-
-/* Responsividad */
-@media (max-width: 860px) {
-  .window-body {
-    grid-template-columns: 1fr;
-    padding: 2.25rem 1.5rem;
-    gap: 2rem;
-  }
-  .glass-headline {
-    font-size: 2.4rem;
-  }
-  .glass-subheadline {
-    font-size: 1.75rem;
+/* Responsivo */
+@media (max-width: 720px) {
+  .window-body-centered {
+    padding: 2rem 1.5rem;
   }
   .grid-cards {
     grid-template-columns: 1fr;
   }
-  .window-nav {
-    display: none;
-  }
-  .window-header {
-    grid-template-columns: 80px 1fr;
-  }
-  .window-footer-icons {
-    position: static;
-    margin-top: 1.5rem;
-    justify-content: center;
+  .landing-title {
+    font-size: 1.8rem;
   }
 }
