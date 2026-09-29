@@ -486,6 +486,7 @@ function openFeatureDrawer(feature, layerKey) {
   const isMobile = window.innerWidth <= 768;
 
   if (isMobile) {
+    document.body.classList.add("drawer-open-mobile");
     // En móviles: Bottom-sheet que sale desde abajo ocupando solo 1/3 de pantalla (peek)
     drawer.classList.remove("expanded");
     drawer.classList.add("peek");
@@ -521,6 +522,7 @@ function openFeatureDrawer(feature, layerKey) {
 }
 
 function closeFeatureDrawer() {
+  document.body.classList.remove("drawer-open-mobile");
   const drawer = document.getElementById("rightDrawer");
   if (drawer) {
     drawer.classList.remove("open");
@@ -734,31 +736,35 @@ function setupUIEventListeners() {
     loadAllLayersForCurrentBbox();
   });
 
-  // Plegar / Desplegar panel izquierdo con el botón flotante dentro del mapa
+  // Control de apertura y cierre del panel izquierdo de filtros
   const leftPanel = document.getElementById("leftPanel");
   const btnFloatingLeft = document.getElementById("btnFloatingLeftMenu");
+  const btnCollapsePanel = document.getElementById("btnCollapsePanel");
 
-  // Al inicio en escritorio el panel está abierto, marcar el botón como panel-open
-  if (leftPanel && !leftPanel.classList.contains("collapsed") && window.innerWidth > 768) {
-    if (btnFloatingLeft) btnFloatingLeft.classList.add("panel-open");
+  // En móvil iniciamos con el panel colapsado para priorizar la visión del mapa
+  if (window.innerWidth <= 768 && leftPanel) {
+    leftPanel.classList.add("collapsed");
   }
 
-  if (btnFloatingLeft) {
+  // Al pulsar el botón flotante en el mapa (solo visible si está colapsado), desplegar el panel
+  if (btnFloatingLeft && leftPanel) {
     btnFloatingLeft.addEventListener("click", () => {
-      const isCollapsed = leftPanel.classList.toggle("collapsed");
-      btnFloatingLeft.classList.toggle("panel-open", !isCollapsed);
-      btnFloatingLeft.classList.toggle("active", !isCollapsed);
+      leftPanel.classList.remove("collapsed");
     });
   }
 
-  const btnCollapsePanel = document.getElementById("btnCollapsePanel");
-  if (btnCollapsePanel) {
+  // Al pulsar el botón de replegar dentro del panel, colapsarlo (haciendo visible el botón flotante)
+  if (btnCollapsePanel && leftPanel) {
     btnCollapsePanel.addEventListener("click", () => {
       leftPanel.classList.add("collapsed");
-      if (btnFloatingLeft) {
-        btnFloatingLeft.classList.remove("panel-open");
-        btnFloatingLeft.classList.remove("active");
-      }
+    });
+  }
+
+  // En móvil, pulsar en la barrita/asa superior del panel también lo colapsa cómodamente
+  const mobileSheetHandle = document.querySelector(".left-panel .mobile-sheet-handle");
+  if (mobileSheetHandle && leftPanel) {
+    mobileSheetHandle.addEventListener("click", () => {
+      leftPanel.classList.add("collapsed");
     });
   }
 

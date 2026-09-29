@@ -70,17 +70,7 @@
       <!-- Mapa Leaflet -->
       <div id="map"></div>
 
-      <!-- 1. Botón Flotante en el mapa para Desplegar / Recoger Menú Izquierdo (Filtros) -->
-      <button id="btnFloatingLeftMenu" class="map-floating-btn left" title="Desplegar o recoger menú de filtros">
-        <svg class="floating-btn-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-        <span class="btn-floating-label">Filtros</span>
-      </button>
-
-      <!-- 2. Botón Flotante en el mapa a la Derecha para Opciones de Fondo Cartográfico -->
+      <!-- Botón Flotante en el mapa a la Derecha para Opciones de Fondo Cartográfico -->
       <div class="floating-control-container right">
         <button id="btnFloatingBasemap" class="map-floating-btn right" title="Opciones de mapa base y saturación">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -391,6 +381,16 @@
           </section>
         </div>
       </aside>
+
+      <!-- Botón Flotante para Desplegar Menú de Filtros (SOLO VISIBLE SI EL MENÚ ESTÁ COLAPSADO) -->
+      <button id="btnFloatingLeftMenu" class="map-floating-btn left" title="Desplegar menú de filtros">
+        <svg class="floating-btn-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <span class="btn-floating-label">Filtros</span>
+      </button>
 
       <!-- Panel Lateral / Bottom-Sheet: Ficha de Información del Elemento Seleccionado -->
       <aside id="rightDrawer" class="right-drawer">
