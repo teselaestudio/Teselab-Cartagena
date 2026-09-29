@@ -483,32 +483,41 @@ function openFeatureDrawer(feature, layerKey) {
     tableBody.appendChild(row);
   });
 
-  // Inicializar SIEMPRE en modo 1/3 de pantalla (peek) al pinchar cualquier elemento
-  drawer.classList.remove("expanded");
-  drawer.classList.add("peek");
-  drawer.classList.add("open");
+  const isMobile = window.innerWidth <= 768;
 
-  const txt = document.getElementById("drawerExpandTxt");
-  if (txt) txt.textContent = "Expandir";
-  const hint = document.getElementById("drawerSwipeHint");
-  if (hint) {
-    const hintTxt = hint.querySelector(".swipe-hint-txt");
-    if (hintTxt) hintTxt.textContent = "Desliza hacia arriba para ver todos los datos";
+  if (isMobile) {
+    // En móviles: Bottom-sheet que sale desde abajo ocupando solo 1/3 de pantalla (peek)
+    drawer.classList.remove("expanded");
+    drawer.classList.add("peek");
+    drawer.classList.add("open");
+
+    const txt = document.getElementById("drawerExpandTxt");
+    if (txt) txt.textContent = "Expandir";
+    const hint = document.getElementById("drawerSwipeHint");
+    if (hint) {
+      const hintTxt = hint.querySelector(".swipe-hint-txt");
+      if (hintTxt) hintTxt.textContent = "Desliza hacia arriba para ver todos los datos";
+    }
+
+    // Colapsar panel izquierdo en móvil
+    const leftPanel = document.getElementById("leftPanel");
+    if (leftPanel) leftPanel.classList.add("collapsed");
+  } else {
+    // En versión de escritorio: Menú de la derecha completo de arriba a abajo, idéntico al de la izquierda
+    drawer.classList.remove("peek");
+    drawer.classList.remove("expanded");
+    drawer.classList.add("open");
+
+    // Desplazar el botón flotante derecho para no solapar con el panel abierto
+    const rightContainer = document.querySelector(".floating-control-container.right");
+    if (rightContainer) rightContainer.classList.add("drawer-open");
   }
 
-  // Cerrar dropdown de la barra superior si estaba abierto
-  const topMenuDropdown = document.getElementById("topMenuDropdown");
-  const btnTopMenuToggle = document.getElementById("btnTopMenuToggle");
-  if (topMenuDropdown) topMenuDropdown.classList.remove("open");
-  if (btnTopMenuToggle) btnTopMenuToggle.classList.remove("active");
-
-  // En dispositivos móviles, colapsar panel izquierdo para dar foco al detalle
-  const leftPanel = document.getElementById("leftPanel");
-  const btnToggleLeft = document.getElementById("btnToggleLeftMenu");
-  if (leftPanel && window.innerWidth <= 768) {
-    leftPanel.classList.add("collapsed");
-    if (btnToggleLeft) btnToggleLeft.classList.remove("active");
-  }
+  // Cerrar desplegable flotante de fondo si estaba abierto
+  const floatingBasemapDropdown = document.getElementById("floatingBasemapDropdown");
+  const btnFloatingBasemap = document.getElementById("btnFloatingBasemap");
+  if (floatingBasemapDropdown) floatingBasemapDropdown.classList.remove("open");
+  if (btnFloatingBasemap) btnFloatingBasemap.classList.remove("active");
 }
 
 function closeFeatureDrawer() {
@@ -516,8 +525,10 @@ function closeFeatureDrawer() {
   if (drawer) {
     drawer.classList.remove("open");
     drawer.classList.remove("expanded");
-    drawer.classList.add("peek");
   }
+  const rightContainer = document.querySelector(".floating-control-container.right");
+  if (rightContainer) rightContainer.classList.remove("drawer-open");
+
   state.selectedFeature = null;
 }
 
@@ -723,51 +734,58 @@ function setupUIEventListeners() {
     loadAllLayersForCurrentBbox();
   });
 
-  // Plegar / Desplegar panel izquierdo (Requirement 1)
+  // Plegar / Desplegar panel izquierdo con el botón flotante dentro del mapa
   const leftPanel = document.getElementById("leftPanel");
-  const btnToggleLeft = document.getElementById("btnToggleLeftMenu");
+  const btnFloatingLeft = document.getElementById("btnFloatingLeftMenu");
 
-  if (btnToggleLeft) {
-    btnToggleLeft.addEventListener("click", () => {
+  // Al inicio en escritorio el panel está abierto, marcar el botón como panel-open
+  if (leftPanel && !leftPanel.classList.contains("collapsed") && window.innerWidth > 768) {
+    if (btnFloatingLeft) btnFloatingLeft.classList.add("panel-open");
+  }
+
+  if (btnFloatingLeft) {
+    btnFloatingLeft.addEventListener("click", () => {
       const isCollapsed = leftPanel.classList.toggle("collapsed");
-      btnToggleLeft.classList.toggle("active", !isCollapsed);
+      btnFloatingLeft.classList.toggle("panel-open", !isCollapsed);
+      btnFloatingLeft.classList.toggle("active", !isCollapsed);
     });
   }
 
-  document.getElementById("btnCollapsePanel").addEventListener("click", () => {
-    leftPanel.classList.add("collapsed");
-    if (btnToggleLeft) btnToggleLeft.classList.remove("active");
-  });
+  const btnCollapsePanel = document.getElementById("btnCollapsePanel");
+  if (btnCollapsePanel) {
+    btnCollapsePanel.addEventListener("click", () => {
+      leftPanel.classList.add("collapsed");
+      if (btnFloatingLeft) {
+        btnFloatingLeft.classList.remove("panel-open");
+        btnFloatingLeft.classList.remove("active");
+      }
+    });
+  }
 
-  document.getElementById("openPanelFab").addEventListener("click", () => {
-    leftPanel.classList.remove("collapsed");
-    if (btnToggleLeft) btnToggleLeft.classList.add("active");
-  });
+  // Botón flotante a la derecha para opciones del fondo cartográfico
+  const btnFloatingBasemap = document.getElementById("btnFloatingBasemap");
+  const floatingBasemapDropdown = document.getElementById("floatingBasemapDropdown");
+  const btnCloseFloatingBasemap = document.getElementById("btnCloseFloatingBasemap");
 
-  // Menú Desplegable Integrado de la Barra Superior (Requirement 3)
-  const btnTopMenuToggle = document.getElementById("btnTopMenuToggle");
-  const topMenuDropdown = document.getElementById("topMenuDropdown");
-  const btnCloseTopMenu = document.getElementById("btnCloseTopMenu");
-
-  if (btnTopMenuToggle && topMenuDropdown) {
-    btnTopMenuToggle.addEventListener("click", (e) => {
+  if (btnFloatingBasemap && floatingBasemapDropdown) {
+    btnFloatingBasemap.addEventListener("click", (e) => {
       e.stopPropagation();
-      const isOpen = topMenuDropdown.classList.toggle("open");
-      btnTopMenuToggle.classList.toggle("active", isOpen);
+      const isOpen = floatingBasemapDropdown.classList.toggle("open");
+      btnFloatingBasemap.classList.toggle("active", isOpen);
     });
 
-    if (btnCloseTopMenu) {
-      btnCloseTopMenu.addEventListener("click", (e) => {
+    if (btnCloseFloatingBasemap) {
+      btnCloseFloatingBasemap.addEventListener("click", (e) => {
         e.stopPropagation();
-        topMenuDropdown.classList.remove("open");
-        btnTopMenuToggle.classList.remove("active");
+        floatingBasemapDropdown.classList.remove("open");
+        btnFloatingBasemap.classList.remove("active");
       });
     }
 
     document.addEventListener("click", (e) => {
-      if (!topMenuDropdown.contains(e.target) && !btnTopMenuToggle.contains(e.target)) {
-        topMenuDropdown.classList.remove("open");
-        btnTopMenuToggle.classList.remove("active");
+      if (!floatingBasemapDropdown.contains(e.target) && !btnFloatingBasemap.contains(e.target)) {
+        floatingBasemapDropdown.classList.remove("open");
+        btnFloatingBasemap.classList.remove("active");
       }
     });
   }

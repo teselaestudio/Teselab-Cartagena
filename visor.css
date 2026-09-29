@@ -83,37 +83,6 @@ html, body {
   gap: 0.75rem;
 }
 
-/* Botón Desplegable / Colapsar Menú de Filtros (Requirement 1) */
-.btn-topbar-menu {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.42rem 0.75rem;
-  font-family: var(--font-title);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-topbar-menu:hover,
-.btn-topbar-menu.active {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(56, 189, 248, 0.45);
-  color: var(--accent-blue);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
-}
-
-.btn-menu-txt {
-  line-height: 1;
-}
-
 .topbar-logo-link {
   display: flex;
   align-items: center;
@@ -176,38 +145,127 @@ html, body {
 }
 
 /* ==========================================================================
-   Topbar Derecha: Menú Desplegable Integrado (Requirement 3)
+   Topbar Derecha: Sesión de Usuario y Navegación
    ========================================================================== */
 .topbar-right {
-  position: relative;
   display: flex;
   align-items: center;
+  gap: 0.75rem;
 }
 
-.btn-top-menu-toggle {
+.user-email-tag {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.32rem 0.7rem;
+  border-radius: 9999px;
+  border: 1px solid var(--glass-border);
+}
+
+.btn-topbar-action {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.42rem 0.8rem;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-topbar-action:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.btn-topbar-action.danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.btn-topbar-action.danger:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Botones Flotantes en el Mapa (Left: Menú / Right: Opciones de Fondo)
+   ========================================================================== */
+.map-floating-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.95rem;
   font-family: var(--font-title);
   font-size: 0.78rem;
   font-weight: 700;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-top-menu-toggle:hover,
-.btn-top-menu-toggle.active {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.btn-top-menu-label {
   letter-spacing: 0.03em;
+  color: #ffffff;
+  background: rgba(20, 20, 26, 0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  z-index: 1000;
+}
+
+.map-floating-btn:hover {
+  background: rgba(30, 30, 38, 0.98);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.75);
+}
+
+.map-floating-btn:active,
+.map-floating-btn.active {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+  color: var(--accent-blue);
+}
+
+/* Botón Flotante Izquierdo (Menú de Filtros) */
+.map-floating-btn.left {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+/* En escritorio, se desplaza automáticamente a la derecha del panel cuando está abierto */
+@media (min-width: 769px) {
+  .map-floating-btn.left.panel-open {
+    left: calc(380px + 1.6rem);
+  }
+}
+
+/* Contenedor y Botón Flotante Derecho (Opciones de Fondo) */
+.floating-control-container.right {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* En escritorio, se desplaza automáticamente a la izquierda del panel de información cuando está abierto */
+@media (min-width: 769px) {
+  .floating-control-container.right.drawer-open {
+    right: calc(400px + 1.6rem);
+  }
 }
 
 .sat-quick-pill {
@@ -220,19 +278,19 @@ html, body {
   font-weight: 700;
 }
 
-/* Desplegable de Ajustes Integrados */
-.top-menu-dropdown {
+/* Desplegable Flotante de Opciones de Fondo */
+.floating-basemap-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 320px;
-  max-width: calc(100vw - 1.5rem);
-  background: rgba(20, 20, 25, 0.96);
+  width: 310px;
+  max-width: calc(100vw - 2rem);
+  background: rgba(20, 20, 26, 0.96);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-md);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85);
   display: none;
   flex-direction: column;
   z-index: 1500;
@@ -240,7 +298,7 @@ html, body {
   animation: dropdownFadeIn 0.2s ease-out;
 }
 
-.top-menu-dropdown.open {
+.floating-basemap-dropdown.open {
   display: flex;
 }
 
@@ -249,7 +307,7 @@ html, body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.top-dropdown-header {
+.floating-dropdown-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -258,7 +316,7 @@ html, body {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.dropdown-heading {
+.floating-dropdown-title {
   font-family: var(--font-title);
   font-size: 0.74rem;
   font-weight: 800;
@@ -267,7 +325,7 @@ html, body {
   color: var(--text-main);
 }
 
-.dropdown-close-btn {
+.floating-dropdown-close {
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -279,12 +337,12 @@ html, body {
   transition: all 0.15s;
 }
 
-.dropdown-close-btn:hover {
+.floating-dropdown-close:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.1);
 }
 
-.top-dropdown-body {
+.floating-dropdown-body {
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -375,75 +433,6 @@ html, body {
 
 .sat-preset-btn:hover {
   background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-}
-
-/* Usuario y Sesión en Menú */
-.user-block {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 0.85rem;
-}
-
-.dropdown-user-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.user-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--accent-green);
-  box-shadow: 0 0 6px var(--accent-green);
-  flex-shrink: 0;
-}
-
-.dropdown-user-email {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dropdown-session-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-top: 0.4rem;
-}
-
-.btn-dropdown-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.55rem;
-  font-size: 0.74rem;
-  font-weight: 600;
-  border-radius: 6px;
-  text-decoration: none;
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-dropdown-action:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-}
-
-.btn-dropdown-action.danger {
-  color: #f87171;
-  border-color: rgba(248, 113, 113, 0.25);
-  background: rgba(239, 68, 68, 0.08);
-}
-
-.btn-dropdown-action.danger:hover {
-  background: rgba(239, 68, 68, 0.2);
   color: #ffffff;
 }
 
@@ -862,48 +851,39 @@ input:checked + .slider:before { transform: translateX(16px); }
 }
 
 /* ==========================================================================
-/* ==========================================================================
-   Panel Bottom-Sheet / Lateral: Ficha de Información del Elemento Seleccionado
-   (Requirement 2: Sale desde abajo ocupando 1/3 de pantalla, deslizable hacia arriba)
+   Panel Lateral Derecho: Ficha de Información del Elemento Seleccionado
+   (En escritorio: Panel completo de arriba a abajo, idéntico al panel izquierdo)
    ========================================================================== */
 .right-drawer {
   position: absolute;
-  bottom: 0;
-  right: 1.5rem;
-  width: 440px;
-  max-width: calc(100vw - 3rem);
+  top: 1rem;
+  bottom: 1rem;
+  right: 1rem;
+  width: 400px;
+  max-width: calc(100vw - 2rem);
   background: var(--glass-surface-elevated);
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid var(--glass-border);
-  border-bottom: none;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -12px 45px rgba(0, 0, 0, 0.85);
-  z-index: 1200;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
+  z-index: 1050;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform: translateY(105%);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  height: 33vh;
-  min-height: 220px;
+  transform: translateX(calc(100% + 2rem));
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .right-drawer.open {
-  transform: translateY(0);
+  transform: translateX(0);
 }
 
-/* Modo 1/3 de Pantalla (por defecto al pinchar un elemento) */
-.right-drawer.peek {
-  height: 33vh;
-  max-height: 35vh;
-  min-height: 220px;
-}
-
-/* Modo Expandido (al deslizar o pulsar Expandir para ver todas las opciones) */
-.right-drawer.expanded {
-  height: 85vh;
-  max-height: 88vh;
+/* En escritorio se ocultan los controles táctiles de arrastre de móvil */
+.right-drawer .drawer-drag-handle,
+.right-drawer .drawer-swipe-hint,
+.right-drawer .expand-btn {
+  display: none;
 }
 
 /* Asa / Manivela de arrastre táctil */
@@ -1361,46 +1341,63 @@ input:checked + .slider:before { transform: translateX(16px); }
     gap: 0.85rem;
   }
 
-  /* Botón Flotante para reabrir Panel en Móvil (Pill centrado) */
-  .open-panel-fab {
+  /* Botón Flotante para Menú de Filtros en Móvil (Pill centrado abajo) */
+  .map-floating-btn.left {
     top: auto;
     bottom: 1.5rem;
     left: 50%;
     transform: translateX(-50%);
     border-radius: 9999px;
     padding: 0.65rem 1.35rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.65);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
     background: rgba(18, 18, 22, 0.95);
-    border: 1px solid rgba(255,255,255,0.22);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     z-index: 1000;
     font-size: 0.78rem;
   }
 
-  .left-panel.collapsed ~ .open-panel-fab {
-    display: flex;
+  /* Cuando el panel izquierdo está abierto en móvil, ocultar el botón flotante para no solapar */
+  .left-panel:not(.collapsed) ~ .map-floating-btn.left,
+  .panel-open-mobile .map-floating-btn.left {
+    display: none;
   }
 
-  /* Bottom Sheet: Panel Derecho / Ficha del Elemento (Requirement 2)
-     Sale desde abajo ocupando solo 1/3 de pantalla (peek), deslizable hasta arriba (expanded) */
+  /* Botón Flotante Derecho en Móvil */
+  .floating-control-container.right {
+    top: 0.65rem;
+    right: 0.65rem;
+  }
+
+  .floating-basemap-dropdown {
+    position: fixed;
+    top: 56px;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    max-width: calc(100vw - 1.5rem);
+    z-index: 1600;
+  }
+
+  /* Bottom Sheet: Panel Derecho / Ficha del Elemento (En Móvil: 1/3 peek deslizable) */
   .right-drawer {
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100vw;
-    max-width: 100vw;
-    border-radius: 20px 20px 0 0;
-    border-bottom: none;
-    border-left: none;
-    border-right: none;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9);
-    transform: translateY(105%);
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 1200;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9) !important;
+    transform: translateY(105%) !important;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    z-index: 1200 !important;
   }
 
   .right-drawer.open {
-    transform: translateY(0);
+    transform: translateY(0) !important;
   }
 
   /* Exactamente 1/3 de pantalla en móvil */
@@ -1416,16 +1413,25 @@ input:checked + .slider:before { transform: translateX(16px); }
     max-height: 88vh !important;
   }
 
+  /* Habilitar en móvil el asa de arrastre, hint y botón de expandir */
+  .right-drawer .drawer-drag-handle {
+    display: flex !important;
+  }
+
+  .right-drawer .drawer-swipe-hint {
+    display: flex !important;
+  }
+
+  .right-drawer .expand-btn {
+    display: inline-flex !important;
+  }
+
   .drawer-header {
     padding: 0.5rem 0.85rem;
   }
 
   .drawer-content {
     padding: 0.65rem 0.85rem;
-  }
-
-  .drawer-actions {
-    padding: 0.85rem 1rem;
   }
 
   /* Controles Leaflet en móvil */
