@@ -7,62 +7,101 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Barra superior protegida -->
-  <header class="topbar">
-    <div class="topbar-brand">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
-        <line x1="8" y1="2" x2="8" y2="18"></line>
-        <line x1="16" y1="6" x2="16" y2="22"></line>
-      </svg>
-      <span>Visor Cartagena</span>
-    </div>
+  <!-- Fondo 3D Escénico: Anillo Cromado y Esferas Metálicas -->
+  <div class="background-stage" aria-hidden="true">
+    <div class="chrome-sphere sphere-1"></div>
+    <div class="chrome-torus"></div>
+    <div class="chrome-sphere sphere-2"></div>
+    <div class="chrome-sphere sphere-3"></div>
+  </div>
 
-    <div class="topbar-user">
-      <div class="user-badge">
-        <span class="status-dot"></span>
-        <span id="userEmail">Cargando...</span>
+  <!-- Ventana Flotante de Vidrio Esmerilado (Glass Window Mockup) -->
+  <main class="glass-window">
+    <!-- Barra superior de la ventana -->
+    <header class="window-header">
+      <div class="window-dots" aria-hidden="true">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
       </div>
-      <button id="logoutBtn" class="btn-secondary" title="Cerrar sesión">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-          <polyline points="16 17 21 12 16 7"></polyline>
-          <line x1="21" y1="12" x2="9" y2="12"></line>
-        </svg>
-        <span>Salir</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- Contenido principal -->
-  <main class="container">
-    <section class="hero-wip">
-      <div class="wip-badge">🚧 En desarrollo / Work in Progress</div>
-      <h1 class="hero-title">Bienvenido al <span>Visor Cartagena</span></h1>
-      <p class="hero-desc">
-        Tu identidad ha sido verificada en la base de datos con éxito. El visor cartográfico y las herramientas interactivas se integrarán en este espacio en la siguiente fase.
-      </p>
-
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🗺️</div>
-          <h2 class="feature-title">Cartografía Base</h2>
-          <p class="feature-text">Capas satelitales, ortofotos y cartografía temática del término de Cartagena.</p>
+      <div class="window-address">visor.cartagena.es/workspace</div>
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem;">
+        <div class="user-pill">
+          <span class="user-status-dot"></span>
+          <span id="userEmail">Autenticando...</span>
         </div>
+        <button id="logoutBtn" class="btn-secondary-glass" title="Cerrar sesión">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Salir</span>
+        </button>
+      </div>
+    </header>
 
-        <div class="feature-card">
-          <div class="feature-icon">🔍</div>
-          <h2 class="feature-title">Análisis Espacial</h2>
-          <p class="feature-text">Consultas de elementos, delimitación de parcelas e inspección detallada.</p>
+    <!-- Contenido Interior Landing WIP -->
+    <div class="landing-body">
+      <section class="landing-hero">
+        <div class="wip-tag">🚧 Work in Progress · Fase 1 Completada</div>
+        <h1 class="landing-title">Visor Cartográfico Cartagena</h1>
+        <p class="landing-subtitle">
+          Has iniciado sesión correctamente. La infraestructura de seguridad y conexión con base de datos está verificada. A continuación se desplegará el visor cartográfico interactivo.
+        </p>
+      </section>
+
+      <div class="grid-cards">
+        <article class="glass-card">
+          <div class="card-icon">🛰️</div>
+          <h2 class="card-title">Ortofoto & PNOA</h2>
+          <p class="card-text">
+            Integración de servicios WMTS de máxima resolución para el término municipal de Cartagena.
+          </p>
+        </article>
+
+        <article class="glass-card">
+          <div class="card-icon">🏛️</div>
+          <h2 class="card-title">Catastro & Planeamiento</h2>
+          <p class="card-text">
+            Capas vectoriales y WMS de parcelas, ordenación urbanística y afecciones patrimoniales.
+          </p>
+        </article>
+
+        <article class="glass-card">
+          <div class="card-icon">📊</div>
+          <h2 class="card-title">Análisis Territorial</h2>
+          <p class="card-text">
+            Herramientas interactivas de medición, filtrado temático e inspección de datos geoespaciales.
+          </p>
+        </article>
+      </div>
+
+      <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="hero-badges">
+          <span class="mini-badge">4K</span>
+          <span class="mini-badge">GIS</span>
+          <span class="mini-badge">TESELA</span>
+          <span class="badge-text">Arquitectura y Territorio</span>
         </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🔒</div>
-          <h2 class="feature-title">Acceso Protegido</h2>
-          <p class="feature-text">Sesión protegida mediante tokens criptográficos JWT y base de datos Supabase.</p>
+        <div class="window-footer-icons" style="position: static;" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
         </div>
       </div>
-    </section>
+    </div>
   </main>
 
   <script type="module">
@@ -71,7 +110,6 @@
     const userEmailSpan = document.getElementById("userEmail");
     const logoutBtn = document.getElementById("logoutBtn");
 
-    // Verificar si el usuario está autenticado; si no, lo envía a index.html
     async function init() {
       const session = await requireAuth();
       if (session && session.user) {
