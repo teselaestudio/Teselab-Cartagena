@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor Cartográfico | TESELAB Cartagena</title>
+  <link rel="icon" type="image/png" href="recursos/favicon tesela.png" />
+
+  <!-- Tipografías Oficiales -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..800;1,400..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Estilos Leaflet & MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <!-- Estilos del Visor -->
+  <link rel="stylesheet" href="visor.css" />
+</head>
+<body>
+  <div class="visor-layout">
+    <!-- Barra Superior -->
+    <header class="visor-topbar">
+      <div class="topbar-left">
+        <a href="landing.html" title="Volver a Inicio">
+          <img src="recursos/logo blanco.png" alt="Tesela Estudio" class="topbar-logo" />
+        </a>
+        <div class="topbar-title-wrap">
+          <span class="topbar-title">TESELAB Cartagena</span>
+          <div class="ogc-live-badge">
+            <span class="pulse-dot"></span>
+            <span>OGC API</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selector de Capa Base -->
+      <div class="topbar-center">
+        <button class="basemap-btn active" data-base="dark" title="Capa Base CartoDB Dark">Modo Oscuro</button>
+        <button class="basemap-btn" data-base="sat" title="Ortofoto Satélite PNOA / IGN">Satélite PNOA</button>
+        <button class="basemap-btn" data-base="light" title="Capa Base Cartográfica Clara">Topográfico</button>
+      </div>
+
+      <!-- Usuario y Acciones -->
+      <div class="topbar-right">
+        <span class="user-email-tag" id="userEmail">Cargando usuario...</span>
+        <a href="landing.html" class="btn-topbar-action" title="Volver a la Landing Page">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          <span>Inicio</span>
+        </a>
+        <button id="logoutBtn" class="btn-topbar-action" title="Cerrar sesión">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Salir</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Espacio del Mapa y Paneles -->
+    <div class="map-workspace">
+      <!-- Indicador de Carga OGC API -->
+      <div id="mapLoader" class="map-loader-indicator">
+        <div class="spinner-small"></div>
+        <span>Consultando OGC API en tiempo real...</span>
+      </div>
+
+      <!-- Mapa Leaflet -->
+      <div id="map"></div>
+
+      <!-- Botón Flotante para reabrir Panel Izquierdo si se colapsa -->
+      <button id="openPanelFab" class="open-panel-fab" title="Abrir Panel de Filtros">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        <span>Filtros y Resumen</span>
+      </button>
+
+      <!-- Panel Izquierdo: Resumen General y Pestañas de Filtros -->
+      <aside id="leftPanel" class="left-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Panel Cartográfico</h2>
+          <button id="btnCollapsePanel" class="panel-collapse-btn" title="Ocultar panel">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <div class="panel-scroll-content">
+          <!-- 1. RESUMEN GENERAL DE ELEMENTOS -->
+          <section class="summary-section">
+            <div class="section-label">
+              <span>Resumen General</span>
+              <span style="color: var(--accent-blue); font-weight: 800;">93.918 TOTAL</span>
+            </div>
+            <div class="summary-grid">
+              <div class="summary-card trees">
+                <div class="summary-val">80.239</div>
+                <div class="summary-name">🌴 Arbolado</div>
+              </div>
+              <div class="summary-card zones">
+                <div class="summary-val">2.698</div>
+                <div class="summary-name">🏛️ Recintos</div>
+              </div>
+              <div class="summary-card surfaces">
+                <div class="summary-val">10.981</div>
+                <div class="summary-name">📐 Superficies</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. PESTAÑAS DE FILTROS POR CAPA -->
+          <section class="filters-section">
+            <div class="section-label">Filtros por Capas OGC</div>
+
+            <nav class="tabs-header">
+              <button class="tab-btn active" data-tab="arbolado">🌴 Arbolado</button>
+              <button class="tab-btn" data-tab="recintos">🏛️ Recintos</button>
+              <button class="tab-btn" data-tab="superficies">📐 Superficies</button>
+            </nav>
+
+            <!-- Pestaña 1: CT_arbolado_y_palmeras -->
+            <div id="tab-arbolado" class="tab-content active">
+              <div class="layer-toggle-wrap">
+                <span class="layer-toggle-title">Capa Visible en Mapa</span>
+                <label class="switch">
+                  <input type="checkbox" id="toggleArbolado" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterArboladoTipo">Tipo de Vegetación</label>
+                <select id="filterArboladoTipo" class="filter-select">
+                  <option value="">Todos los tipos</option>
+                  <option value="arbol">Árbol</option>
+                  <option value="palmera">Palmera</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterArboladoZona">Zona Territorial</label>
+                <select id="filterArboladoZona" class="filter-select">
+                  <option value="">Todas las zonas</option>
+                  <option value="CENTRO">CENTRO</option>
+                  <option value="LIT PONIENTE">LIT PONIENTE</option>
+                  <option value="MAR MENOR">MAR MENOR</option>
+                  <option value="ZONA NORTE">ZONA NORTE</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterArboladoTamano">Tamaño / Altura</label>
+                <select id="filterArboladoTamano" class="filter-select">
+                  <option value="">Todos los tamaños</option>
+                  <option value="Menos de 3 m">Menos de 3 m</option>
+                  <option value="De 3 a 6 m">De 3 a 6 m</option>
+                  <option value="Mas de 6 m">Más de 6 m</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterArboladoSearch">Búsqueda rápida</label>
+                <input type="text" id="filterArboladoSearch" class="filter-input" placeholder="Buscar por código o especie (ej. Phoenix)..." />
+              </div>
+            </div>
+
+            <!-- Pestaña 2: CT_recintos -->
+            <div id="tab-recintos" class="tab-content">
+              <div class="layer-toggle-wrap">
+                <span class="layer-toggle-title">Capa Visible en Mapa</span>
+                <label class="switch">
+                  <input type="checkbox" id="toggleRecintos" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterRecintosZona">Zona Territorial</label>
+                <select id="filterRecintosZona" class="filter-select">
+                  <option value="">Todas las zonas</option>
+                  <option value="CENTRO">CENTRO</option>
+                  <option value="LIT PONIENTE">LIT PONIENTE</option>
+                  <option value="MAR MENOR">MAR MENOR</option>
+                  <option value="ZONA NORTE">ZONA NORTE</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterRecintosEstado">Estado / Tipo</label>
+                <select id="filterRecintosEstado" class="filter-select">
+                  <option value="">Todos los estados</option>
+                  <option value="Viario">Viario</option>
+                  <option value="Parque">Parque</option>
+                  <option value="Plaza">Plaza</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterRecintosSearch">Nombre o Código</label>
+                <input type="text" id="filterRecintosSearch" class="filter-input" placeholder="Buscar por calle o código de recinto..." />
+              </div>
+            </div>
+
+            <!-- Pestaña 3: Ct_superficies -->
+            <div id="tab-superficies" class="tab-content">
+              <div class="layer-toggle-wrap">
+                <span class="layer-toggle-title">Capa Visible en Mapa</span>
+                <label class="switch">
+                  <input type="checkbox" id="toggleSuperficies" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterSuperficiesElemento">Elemento de Superficie</label>
+                <select id="filterSuperficiesElemento" class="filter-select">
+                  <option value="">Todos los elementos</option>
+                  <option value="jardin">Jardín</option>
+                  <option value="parterre">Parterre</option>
+                  <option value="cesped">Césped</option>
+                  <option value="alcorque">Alcorque</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterSuperficiesZona">Zona Territorial</label>
+                <select id="filterSuperficiesZona" class="filter-select">
+                  <option value="">Todas las zonas</option>
+                  <option value="CENTRO">CENTRO</option>
+                  <option value="LIT PONIENTE">LIT PONIENTE</option>
+                  <option value="MAR MENOR">MAR MENOR</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterSuperficiesContrato">Contrato / Lote</label>
+                <select id="filterSuperficiesContrato" class="filter-select">
+                  <option value="">Todos los lotes</option>
+                  <option value="LOTE 1">LOTE 1</option>
+                  <option value="LOTE 2">LOTE 2</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Botones de Acción de Filtros -->
+            <div class="filter-actions">
+              <button id="btnApplyFilters" class="btn-apply-filters">Aplicar Filtros</button>
+              <button id="btnResetFilters" class="btn-reset-filters">Limpiar</button>
+            </div>
+
+            <div id="visibleCountText" class="visible-counter-pill">
+              Consultando elementos en el encuadre...
+            </div>
+          </section>
+        </div>
+      </aside>
+
+      <!-- Panel Lateral Derecho: Ficha de Información del Elemento Seleccionado -->
+      <aside id="rightDrawer" class="right-drawer">
+        <header class="drawer-header">
+          <div>
+            <span id="drawerLayerBadge" class="drawer-layer-badge arbolado">Capa</span>
+            <h3 id="drawerTitle" class="drawer-title">Detalle del Elemento</h3>
+          </div>
+          <button id="btnCloseDrawer" class="drawer-close-btn" title="Cerrar panel de información">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+
+        <div class="drawer-content">
+          <table class="feature-attr-table">
+            <tbody id="featureAttributesBody">
+              <!-- Se rellena dinámicamente con los atributos del OGC API -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="drawer-actions">
+          <button id="btnZoomFeature" class="btn-drawer-zoom">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+            <span>Centrar en Mapa</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Scripts: Leaflet, MarkerCluster y Módulo del Visor -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script type="module" src="visor.js"></script>
+</body>
+</html>
