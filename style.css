@@ -1,16 +1,15 @@
 :root {
-  --bg-deep: #07080a;
-  --glass-surface: rgba(18, 20, 26, 0.62);
-  --glass-border: rgba(255, 255, 255, 0.13);
-  --glass-border-focus: rgba(255, 255, 255, 0.4);
-  --glass-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.25);
-  --glass-shadow: 0 40px 90px -15px rgba(0, 0, 0, 0.85), 0 0 1px rgba(255, 255, 255, 0.2);
+  --bg-deep: #121212;
+  --glass-surface: rgba(22, 22, 24, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-focus: rgba(255, 255, 255, 0.38);
+  --glass-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.22);
+  --glass-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.85), 0 0 1px rgba(255, 255, 255, 0.15);
   
   --text-main: #f3f4f6;
   --text-muted: #9ca3af;
   --text-dim: #6b7280;
 
-  --accent-blue: #38bdf8;
   --radius-window: 24px;
   --radius-sm: 10px;
 
@@ -38,20 +37,23 @@ body {
 }
 
 /* ==========================================================================
-   Fondo Paisaje Abstracto Pixelado (Nothing dot-matrix style) con Degradado
+   Fondo Vectorial Abstracto Nothing: Paisaje Topográfico en Matriz de Puntos
    ========================================================================== */
 .background-stage {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background-image: 
-    radial-gradient(ellipse at 50% 45%, rgba(35, 45, 65, 0.5) 0%, rgba(7, 8, 10, 0.82) 65%, #050608 100%),
-    url("recursos/fondo-nothing.png");
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-attachment: fixed;
+  background-color: var(--bg-deep);
+  overflow: hidden;
+}
+
+.landscape-svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
 }
 
 /* ==========================================================================
@@ -63,8 +65,8 @@ body {
   width: 100%;
   max-width: 480px;
   background: var(--glass-surface);
-  backdrop-filter: blur(34px) saturate(180%);
-  -webkit-backdrop-filter: blur(34px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-window);
   box-shadow: var(--glass-shadow);
@@ -83,10 +85,10 @@ body {
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.3) 0%,
     rgba(255, 255, 255, 0.08) 40%,
     rgba(255, 255, 255, 0.02) 70%,
-    rgba(255, 255, 255, 0.15) 100%
+    rgba(255, 255, 255, 0.12) 100%
   );
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -95,7 +97,7 @@ body {
   pointer-events: none;
 }
 
-/* Barra superior minimalista y centrada */
+/* Barra superior sutil */
 .window-header {
   height: 46px;
   display: flex;
@@ -114,7 +116,7 @@ body {
   user-select: none;
 }
 
-/* Icono web que redirecciona a www.teselaestudio.es */
+/* Icono web enlazado a www.teselaestudio.es */
 .web-link-icon {
   display: inline-flex;
   align-items: center;
@@ -122,7 +124,7 @@ body {
   color: rgba(255, 255, 255, 0.45);
   transition: all 0.2s ease;
   text-decoration: none;
-  padding: 4px;
+  padding: 5px;
   border-radius: 6px;
 }
 
@@ -315,7 +317,7 @@ body {
 }
 
 /* ==========================================================================
-   Landing Page (Work in Progress) en el mismo estilo
+   Landing Page (Work in Progress)
    ========================================================================== */
 .glass-window-wide {
   max-width: 860px;
@@ -443,7 +445,6 @@ body {
   border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* Responsivo */
 @media (max-width: 720px) {
   .window-body-centered {
     padding: 2rem 1.5rem;
